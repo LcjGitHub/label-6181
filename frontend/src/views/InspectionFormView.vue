@@ -176,6 +176,7 @@ onMounted(() => {
             v-model:formatted-value="formModel.inspection_time"
             type="datetime"
             value-format="yyyy-MM-dd HH:mm"
+            format="yyyy-MM-dd HH:mm"
             placeholder="请选择巡检时间"
             style="width: 100%"
           />

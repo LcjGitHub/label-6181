@@ -1,5 +1,7 @@
 """Pydantic 请求/响应模型。"""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -80,12 +82,15 @@ class MaintenanceOut(MaintenanceBase):
     model_config = {"from_attributes": True}
 
 
+InspectionResult = Literal["正常", "异常"]
+
+
 class InspectionBase(BaseModel):
     """巡检记录公共字段。"""
 
     machine_id: int = Field(..., description="售货机编号")
     inspection_time: str = Field(..., min_length=1, description="巡检时间，格式 YYYY-MM-DD HH:mm")
-    result: str = Field(..., min_length=1, description="巡检结果：正常 或 异常")
+    result: InspectionResult = Field(..., description="巡检结果：正常 或 异常")
     remark: str = Field("", description="异常说明")
 
 

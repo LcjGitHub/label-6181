@@ -62,6 +62,13 @@ cd frontend && npm install && npm run dev
 - 新增、编辑、删除维保记录
 - 字段：关联售货机编号、维保日期、维保类型、经办人、维保说明
 
+### 巡检打卡
+
+- 巡检打卡页：选择售货机、巡检时间（精确到分钟）、巡检结果（正常/异常），异常时必填异常说明
+- 巡检历史列表页：查看全部巡检记录，支持按巡检结果（全部/正常/异常）筛选
+- 售货机列表操作列提供「巡检」快捷入口，自动带入售货机编号
+- 启动时自动写入 5 条示例巡检数据
+
 #### 页面
 
 | 路径 | 说明 |
@@ -73,6 +80,8 @@ cd frontend && npm install && npm run dev
 | `/maintenances` | 全量维保记录列表（支持筛选） |
 | `/maintenances/new` | 新增维保记录 |
 | `/maintenances/:id/edit` | 编辑维保记录 |
+| `/inspections` | 巡检历史列表页（支持按巡检结果筛选） |
+| `/inspections/new` | 新增巡检打卡 |
 
 ## 未包含
 
@@ -128,3 +137,19 @@ cd frontend && npm install && npm run dev
 | `maintenance_type` | string | 是 | 维保类型（日常巡检 / 清洁保养 / 零部件更换 / 故障维修 / 系统升级 / 其他） |
 | `handler` | string | 是 | 经办人 |
 | `description` | string | 否 | 维保说明 |
+
+### 巡检记录
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/inspections?result=all\|正常\|异常` | 列表（按巡检结果筛选：全部 / 正常 / 异常） |
+| POST | `/api/inspections` | 新增 |
+
+巡检记录字段说明：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `machine_id` | integer | 是 | 售货机编号（外键关联 machines 表） |
+| `inspection_time` | string | 是 | 巡检时间（格式 YYYY-MM-DD HH:mm，精确到分钟） |
+| `result` | string | 是 | 巡检结果，仅允许：`正常` 或 `异常` |
+| `remark` | string | 否 | 异常说明（结果为异常时建议填写） |

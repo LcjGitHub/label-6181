@@ -134,14 +134,16 @@ onMounted(() => {
         </NRadioGroup>
       </div>
 
-      <NDataTable
-        :columns="columns"
-        :data="inspections"
-        :loading="isLoading || machinesLoading"
-        :bordered="false"
-        striped
-        :row-key="(row: Inspection) => row.id"
-      />
+      <NSpin :show="isLoading || machinesLoading">
+        <NDataTable
+          :columns="columns"
+          :data="inspections"
+          :loading="false"
+          :bordered="false"
+          striped
+          :row-key="(row: Inspection) => row.id"
+        />
+      </NSpin>
     </NCard>
   </div>
 </template>

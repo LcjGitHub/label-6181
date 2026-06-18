@@ -15,10 +15,14 @@ const http = axios.create({
 export async function fetchMachines(
   operational: OperationalFilter = 'all',
   tagId: number | null = null,
+  keyword: string = '',
 ): Promise<Machine[]> {
   const params: Record<string, unknown> = { operational }
   if (tagId !== null) {
     params.tag_id = tagId
+  }
+  if (keyword.trim()) {
+    params.keyword = keyword.trim()
   }
   const { data } = await http.get<Machine[]>('/machines', { params })
   return data

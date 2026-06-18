@@ -206,34 +206,40 @@ def list_machines(
         "all", description="运作状态筛选：all / true / false"
     ),
     tag_id: int | None = Query(None, description="按标签 ID 筛选，None 表示全部"),
+    keyword: str = Query("", description="关键词搜索，按机型、地点、售卖品类、照片描述模糊匹配"),
 ) -> list[MachineOut]:
-  """获取售货机列表，支持运作状态筛选和标签筛选。"""
+  """获取售货机列表，支持运作状态筛选、标签筛选和关键词搜索。"""
   conn = get_connection()
   try:
     params: list = []
+    conditions: list[str] = []
+
+    if keyword.strip():
+      kw = f"%{keyword.strip()}%"
+      conditions.append("(m.model_type LIKE ? OR m.location LIKE ? OR m.categories LIKE ? OR m.photo_description LIKE ?)")
+      params.extend([kw, kw, kw, kw])
+
+    if operational == "true":
+      conditions.append("m.is_operational = 1")
+    elif operational == "false":
+      conditions.append("m.is_operational = 0")
+
+    where_clause = ""
+    if conditions:
+      where_clause = " WHERE " + " AND ".join(conditions)
+
     if tag_id is not None:
-      sql = """
-        SELECT DISTINCT m.*
-        FROM machines m
-        JOIN machine_tags mt ON m.id = mt.machine_id
-        WHERE mt.tag_id = ?
-      """
-      params.append(tag_id)
-      where_conditions = []
-      if operational == "true":
-        where_conditions.append("m.is_operational = 1")
-      elif operational == "false":
-        where_conditions.append("m.is_operational = 0")
-      if where_conditions:
-        sql += " AND " + " AND ".join(where_conditions)
-      sql += " ORDER BY m.id ASC"
+      sql = f"SELECT DISTINCT m.* FROM machines m JOIN machine_tags mt ON m.id = mt.machine_id"
+      tag_conditions = ["mt.tag_id = ?"]
+      params.insert(0, tag_id)
+      remaining_conditions = conditions
+      if remaining_conditions:
+        tag_conditions.extend(remaining_conditions)
+      where_clause = " WHERE " + " AND ".join(tag_conditions)
+      sql += where_clause + " ORDER BY m.id ASC"
     else:
-      sql = "SELECT * FROM machines"
-      if operational == "true":
-        sql += " WHERE is_operational = 1"
-      elif operational == "false":
-        sql += " WHERE is_operational = 0"
-      sql += " ORDER BY id ASC"
+      sql = "SELECT m.* FROM machines m" + where_clause + " ORDER BY m.id ASC"
+
     rows = conn.execute(sql, params).fetchall()
     return [row_to_machine(row, conn) for row in rows]
   finally:

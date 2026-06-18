@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
+import { useMessage, NButton, NTag, NSpace, NPopconfirm, NInput } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { deleteMachine, fetchMachines } from '@/api/machines'
@@ -15,6 +15,7 @@ const message = useMessage()
 const operationalFilter = ref<OperationalFilter>('all')
 const tagFilter = ref<number | null>(null)
 const allTags = ref<Tag[]>([])
+const searchKeyword = ref('')
 
 const filterOptions = [
   { label: '全部', value: 'all' as const },
@@ -34,7 +35,7 @@ const {
 } = useAsyncState(
   async () => {
     try {
-      return await fetchMachines(operationalFilter.value, tagFilter.value)
+      return await fetchMachines(operationalFilter.value, tagFilter.value, searchKeyword.value)
     } catch {
       message.error('加载售货机列表失败')
       return []
@@ -226,6 +227,15 @@ onMounted(() => {
           style="width: 180px"
           placeholder="选择标签"
         />
+        <span class="toolbar-sep" />
+        <span class="toolbar-label">关键词搜索</span>
+        <NInput
+          v-model:value="searchKeyword"
+          placeholder="机型、地点、品类、描述"
+          style="width: 220px"
+          @keyup.enter="onFilterChange"
+        />
+        <NButton type="primary" @click="onFilterChange">搜索</NButton>
       </div>
 
       <NDataTable

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import { useMessage, NButton, NTag, NSpace, NPopconfirm, NSelect } from 'naive-ui'
+import type { DataTableColumns, SelectOption } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { deleteMaintenance, fetchMaintenances } from '@/api/maintenances'
-import { fetchMachine } from '@/api/machines'
+import { fetchMachine, fetchMachines } from '@/api/machines'
 import type { Maintenance } from '@/types/maintenance'
 import type { Machine } from '@/types/machine'
 
@@ -15,7 +15,7 @@ const message = useMessage()
 
 const machine = ref<Machine | null>(null)
 
-const machineId = computed(() => {
+const machineIdFromRoute = computed(() => {
   const raw = route.params.machineId
   if (typeof raw === 'string') {
     const parsed = Number(raw)
@@ -24,22 +24,43 @@ const machineId = computed(() => {
   return undefined
 })
 
-const hasMachineScope = computed(() => machineId.value !== undefined)
+const hasMachineScope = computed(() => machineIdFromRoute.value !== undefined)
+
+const filterMachineId = ref<number | null>(null)
+
+const { state: allMachines, isLoading: machinesLoading } = useAsyncState(
+  () => fetchMachines('all'),
+  [] as Machine[],
+  { immediate: true },
+)
+
+const machineFilterOptions = computed<SelectOption[]>(() => [
+  { label: '全部售货机', value: null as unknown as number },
+  ...allMachines.value.map((m) => ({
+    label: `#${m.id} · ${m.model_type}`,
+    value: m.id,
+  })),
+])
+
+const effectiveMachineId = computed(() => {
+  if (hasMachineScope.value) return machineIdFromRoute.value
+  return filterMachineId.value ?? undefined
+})
 
 const {
   state: maintenances,
   isLoading,
   execute: reload,
 } = useAsyncState(
-  () => fetchMaintenances(machineId.value),
+  () => fetchMaintenances(effectiveMachineId.value),
   [],
   { immediate: false, resetOnExecute: false },
 )
 
 async function loadMachineInfo() {
-  if (machineId.value === undefined) return
+  if (machineIdFromRoute.value === undefined) return
   try {
-    machine.value = await fetchMachine(machineId.value)
+    machine.value = await fetchMachine(machineIdFromRoute.value)
   } catch {
     message.error('加载售货机信息失败')
   }
@@ -56,10 +77,11 @@ async function handleDelete(id: number) {
 }
 
 function goCreate() {
-  if (machineId.value !== undefined) {
+  const mid = effectiveMachineId.value
+  if (mid !== undefined) {
     router.push({
       path: '/maintenances/new',
-      query: { machine_id: String(machineId.value) },
+      query: { machine_id: String(mid) },
     })
   } else {
     router.push('/maintenances/new')
@@ -68,6 +90,11 @@ function goCreate() {
 
 function goBack() {
   router.push('/')
+}
+
+function onFilterChange(value: number | null) {
+  filterMachineId.value = value
+  reload()
 }
 
 const columns = computed<DataTableColumns<Maintenance>>(() => {
@@ -160,7 +187,7 @@ onMounted(async () => {
     <header class="page-header">
       <div>
         <h1>
-          {{ hasMachineScope ? `${machine?.model_type ?? `售货机 #${machineId}`} 的维保记录` : '维保记录管理' }}
+          {{ hasMachineScope ? `${machine?.model_type ?? `售货机 #${machineIdFromRoute}`} 的维保记录` : '维保记录管理' }}
         </h1>
         <p class="subtitle" v-if="hasMachineScope">
           {{ machine?.location ?? '—' }} · 记录日常巡检、维修与保养
@@ -179,7 +206,20 @@ onMounted(async () => {
       </NSpace>
     </header>
 
-    <NCard class="list-card" :title="hasMachineScope ? `售货机 #${machineId} 维保历史` : '维保记录列表'">
+    <NCard class="list-card" :title="hasMachineScope ? `售货机 #${machineIdFromRoute} 维保历史` : '维保记录列表'">
+      <div v-if="!hasMachineScope" class="toolbar">
+        <span class="toolbar-label">按售货机筛选</span>
+        <NSelect
+          :value="filterMachineId"
+          :options="machineFilterOptions"
+          :loading="machinesLoading"
+          placeholder="全部售货机"
+          clearable
+          style="width: 240px"
+          @update:value="onFilterChange"
+        />
+      </div>
+
       <NDataTable
         :columns="columns"
         :data="maintenances"
@@ -222,5 +262,18 @@ onMounted(async () => {
 .list-card {
   background: #fffdf8;
   border: 1px solid #e8dcc8;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-label {
+  font-size: 0.9rem;
+  color: #6b5c48;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
@@ -58,17 +58,54 @@ const maintenanceTypeOptions: SelectOption[] = [
   { label: '其他', value: '其他' },
 ]
 
-const formModel = reactive<MaintenanceForm>({
-  machine_id: queryMachineId.value ?? 1,
-  maintenance_date: new Date().toISOString().slice(0, 10),
+const formModel = reactive<{
+  machine_id: number | null
+  maintenance_date: string | null
+  maintenance_type: string
+  handler: string
+  description: string
+}>({
+  machine_id: null,
+  maintenance_date: null,
   maintenance_type: '日常巡检',
   handler: '',
   description: '',
 })
 
+watch(machineOptions, (opts) => {
+  if (formModel.machine_id !== null) return
+  if (queryMachineId.value !== null && opts.some((o) => o.value === queryMachineId.value)) {
+    formModel.machine_id = queryMachineId.value
+  } else if (opts.length > 0) {
+    formModel.machine_id = opts[0].value as number
+  }
+}, { immediate: true })
+
 const rules: FormRules = {
-  machine_id: [{ required: true, message: '请选择售货机', trigger: 'change' }],
-  maintenance_date: [{ required: true, message: '请选择维保日期', trigger: 'change' }],
+  machine_id: [
+    {
+      required: true,
+      validator(_rule, value) {
+        if (value === null || value === undefined) {
+          return new Error('请选择售货机')
+        }
+        return true
+      },
+      trigger: 'change',
+    },
+  ],
+  maintenance_date: [
+    {
+      required: true,
+      validator(_rule, value) {
+        if (!value) {
+          return new Error('请选择维保日期')
+        }
+        return true
+      },
+      trigger: 'change',
+    },
+  ],
   maintenance_type: [{ required: true, message: '请选择维保类型', trigger: 'change' }],
   handler: [{ required: true, message: '请输入经办人', trigger: 'blur' }],
 }
@@ -103,13 +140,21 @@ async function loadMaintenance() {
 
 async function handleSubmit() {
   await formRef.value?.validate()
+  if (formModel.machine_id === null || !formModel.maintenance_date) return
   submitting.value = true
   try {
+    const payload: MaintenanceForm = {
+      machine_id: formModel.machine_id,
+      maintenance_date: formModel.maintenance_date,
+      maintenance_type: formModel.maintenance_type,
+      handler: formModel.handler,
+      description: formModel.description,
+    }
     if (isEdit.value && maintenanceId.value !== null) {
-      await updateMaintenance(maintenanceId.value, { ...formModel })
+      await updateMaintenance(maintenanceId.value, payload)
       message.success('已更新')
     } else {
-      await createMaintenance({ ...formModel })
+      await createMaintenance(payload)
       message.success('已新增')
     }
     backToList()
@@ -135,7 +180,7 @@ onMounted(() => {
       <NButton quaternary @click="backToList">返回列表</NButton>
     </header>
 
-    <NSpin :show="loading || machinesLoading">
+    <NSpin :show="loading">
       <NCard class="form-card">
         <NForm
           ref="formRef"
@@ -158,7 +203,7 @@ onMounted(() => {
 
           <NFormItem label="维保日期" path="maintenance_date">
             <NDatePicker
-              v-model:value="formModel.maintenance_date"
+              v-model:formatted-value="formModel.maintenance_date"
               type="date"
               value-format="yyyy-MM-dd"
               placeholder="请选择维保日期"

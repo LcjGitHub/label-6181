@@ -74,6 +74,30 @@ MANUFACTURER_SEED_DATA = [
     },
 ]
 
+MAINTENANCE_SEED_DATA = [
+    {
+        "machine_id": 1,
+        "maintenance_date": "2026-05-20",
+        "maintenance_type": "日常巡检",
+        "handler": "张伟",
+        "description": "检查电源线及制冷系统运转正常，补货通道无阻塞",
+    },
+    {
+        "machine_id": 1,
+        "maintenance_date": "2026-06-10",
+        "maintenance_type": "故障维修",
+        "handler": "李强",
+        "description": "投币口传感器失灵，更换全新传感器模块后恢复正常",
+    },
+    {
+        "machine_id": 3,
+        "maintenance_date": "2026-06-15",
+        "maintenance_type": "清洁保养",
+        "handler": "王芳",
+        "description": "机身外观清洗、玻璃门抛光，内部灯管更换为LED灯条",
+    },
+]
+
 
 def seed_if_empty() -> None:
     """
@@ -99,6 +123,16 @@ def seed_if_empty() -> None:
                 VALUES (:brand_name, :country, :founded_year, :description)
                 """,
                 MANUFACTURER_SEED_DATA,
+            )
+
+        mnt_count = conn.execute("SELECT COUNT(*) FROM maintenances").fetchone()[0]
+        if mnt_count == 0:
+            conn.executemany(
+                """
+                INSERT INTO maintenances (machine_id, maintenance_date, maintenance_type, handler, description)
+                VALUES (:machine_id, :maintenance_date, :maintenance_type, :handler, :description)
+                """,
+                MAINTENANCE_SEED_DATA,
             )
 
         conn.commit()

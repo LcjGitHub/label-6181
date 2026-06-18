@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
 from schemas import (
+    Page,
     TagCreate, TagOut, TagUpdate,
     MachineCreate, MachineOut, MachineUpdate, MachineTagSet,
     ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
@@ -200,15 +201,17 @@ def delete_tag(tag_id: int) -> None:
     conn.close()
 
 
-@app.get("/api/machines", response_model=list[MachineOut])
+@app.get("/api/machines", response_model=Page[MachineOut])
 def list_machines(
     operational: Literal["all", "true", "false"] = Query(
         "all", description="运作状态筛选：all / true / false"
     ),
     tag_id: int | None = Query(None, description="按标签 ID 筛选，None 表示全部"),
     keyword: str = Query("", description="关键词搜索，按机型、地点、售卖品类、照片描述模糊匹配"),
-) -> list[MachineOut]:
-  """获取售货机列表，支持运作状态筛选、标签筛选和关键词搜索。"""
+    page: int = Query(1, ge=1, description="页码，从 1 开始"),
+    page_size: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
+) -> Page[MachineOut]:
+  """获取售货机列表，支持运作状态筛选、标签筛选、关键词搜索和分页。"""
   conn = get_connection()
   try:
     params: list = []
@@ -229,19 +232,27 @@ def list_machines(
       where_clause = " WHERE " + " AND ".join(conditions)
 
     if tag_id is not None:
-      sql = f"SELECT DISTINCT m.* FROM machines m JOIN machine_tags mt ON m.id = mt.machine_id"
+      base_sql = "SELECT DISTINCT m.* FROM machines m JOIN machine_tags mt ON m.id = mt.machine_id"
       tag_conditions = ["mt.tag_id = ?"]
       params.insert(0, tag_id)
       remaining_conditions = conditions
       if remaining_conditions:
         tag_conditions.extend(remaining_conditions)
       where_clause = " WHERE " + " AND ".join(tag_conditions)
-      sql += where_clause + " ORDER BY m.id ASC"
     else:
-      sql = "SELECT m.* FROM machines m" + where_clause + " ORDER BY m.id ASC"
+      base_sql = "SELECT m.* FROM machines m"
 
-    rows = conn.execute(sql, params).fetchall()
-    return [row_to_machine(row, conn) for row in rows]
+    count_sql = base_sql.replace("m.*", "COUNT(DISTINCT m.id)", 1) + where_clause
+    total_row = conn.execute(count_sql, params).fetchone()
+    total = total_row[0] if total_row else 0
+
+    offset = (page - 1) * page_size
+    data_sql = base_sql + where_clause + " ORDER BY m.id ASC LIMIT ? OFFSET ?"
+    data_params = params + [page_size, offset]
+    rows = conn.execute(data_sql, data_params).fetchall()
+
+    items = [row_to_machine(row, conn) for row in rows]
+    return Page[MachineOut](items=items, total=total, page=page, page_size=page_size)
   finally:
     conn.close()
 

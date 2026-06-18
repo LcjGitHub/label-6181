@@ -1,8 +1,19 @@
 """Pydantic 请求/响应模型。"""
 
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    """通用分页响应。"""
+
+    items: list[T] = Field(..., description="当前页数据列表")
+    total: int = Field(..., description="总条数")
+    page: int = Field(..., description="当前页码，从 1 开始")
+    page_size: int = Field(..., description="每页条数")
 
 
 class TagBase(BaseModel):

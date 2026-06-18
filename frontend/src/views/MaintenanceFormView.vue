@@ -37,7 +37,10 @@ const queryMachineId = computed(() => {
 })
 
 const { state: machines, isLoading: machinesLoading } = useAsyncState(
-  () => fetchMachines('all'),
+  async () => {
+    const result = await fetchMachines('all', null, '', 1, 1000)
+    return result.items
+  },
   [] as Machine[],
   { immediate: true },
 )

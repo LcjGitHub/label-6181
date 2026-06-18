@@ -36,6 +36,14 @@ export interface CategoryStats {
   count: number
 }
 
+/** 分页响应 */
+export interface PageData<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+}
+
 /** 统计看板数据 */
 export interface StatisticsData {
   total_machines: number

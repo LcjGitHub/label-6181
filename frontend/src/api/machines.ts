@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Machine, MachineForm, OperationalFilter, StatisticsData } from '@/types/machine'
+import type { Machine, MachineForm, OperationalFilter, PageData, StatisticsData } from '@/types/machine'
 import type { Tag } from '@/types/tag'
 
 const http = axios.create({
@@ -8,24 +8,28 @@ const http = axios.create({
 })
 
 /**
- * 获取售货机列表
+ * 获取售货机列表（分页）
  * @param operational - 运作状态筛选
  * @param tagId - 标签 ID 筛选，null 表示全部
  * @param keyword - 关键词搜索，按机型、地点、售卖品类、照片描述模糊匹配，空字符串表示不搜索；可与运作状态、标签筛选组合使用
+ * @param page - 页码，从 1 开始
+ * @param pageSize - 每页条数
  */
 export async function fetchMachines(
   operational: OperationalFilter = 'all',
   tagId: number | null = null,
   keyword: string = '',
-): Promise<Machine[]> {
-  const params: Record<string, unknown> = { operational }
+  page: number = 1,
+  pageSize: number = 10,
+): Promise<PageData<Machine>> {
+  const params: Record<string, unknown> = { operational, page, page_size: pageSize }
   if (tagId !== null) {
     params.tag_id = tagId
   }
   if (keyword.trim()) {
     params.keyword = keyword.trim()
   }
-  const { data } = await http.get<Machine[]>('/machines', { params })
+  const { data } = await http.get<PageData<Machine>>('/machines', { params })
   return data
 }
 

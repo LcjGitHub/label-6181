@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NButton, NTag, NSpace, NPopconfirm, NInput } from 'naive-ui'
+import { useMessage, NButton, NTag, NSpace, NPopconfirm, NInput, NPagination } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { deleteMachine, fetchMachines } from '@/api/machines'
@@ -16,6 +16,9 @@ const operationalFilter = ref<OperationalFilter>('all')
 const tagFilter = ref<number | null>(null)
 const allTags = ref<Tag[]>([])
 const searchKeyword = ref('')
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const filterOptions = [
   { label: '全部', value: 'all' as const },
@@ -43,9 +46,18 @@ const {
 } = useAsyncState(
   async () => {
     try {
-      return await fetchMachines(operationalFilter.value, tagFilter.value, searchKeyword.value)
+      const result = await fetchMachines(
+        operationalFilter.value,
+        tagFilter.value,
+        searchKeyword.value,
+        page.value,
+        pageSize.value,
+      )
+      total.value = result.total
+      return result.items
     } catch {
       message.error('加载售货机列表失败')
+      total.value = 0
       return []
     }
   },
@@ -61,8 +73,22 @@ async function loadTags() {
   }
 }
 
-/** 筛选变化时重新加载 */
+/** 筛选变化时重置页码并重新加载 */
 function onFilterChange() {
+  page.value = 1
+  reload()
+}
+
+/** 分页变化处理 */
+function onPageChange(p: number) {
+  page.value = p
+  reload()
+}
+
+/** 每页条数变化处理 */
+function onPageSizeChange(size: number) {
+  pageSize.value = size
+  page.value = 1
   reload()
 }
 
@@ -263,6 +289,19 @@ onMounted(() => {
           </div>
         </template>
       </NDataTable>
+
+      <div class="pagination-wrapper">
+        <NPagination
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :item-count="total"
+          :page-sizes="[5, 10, 20, 50]"
+          show-size-picker
+          show-quick-jumper
+          @update:page="onPageChange"
+          @update:page-size="onPageSizeChange"
+        />
+      </div>
     </NCard>
   </div>
 </template>
@@ -328,5 +367,11 @@ onMounted(() => {
 
 .empty-state.no-match {
   color: #d08a3a;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 </style>

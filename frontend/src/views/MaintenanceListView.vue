@@ -29,7 +29,10 @@ const hasMachineScope = computed(() => machineIdFromRoute.value !== undefined)
 const filterMachineId = ref<number | null>(null)
 
 const { state: allMachines, isLoading: machinesLoading } = useAsyncState(
-  () => fetchMachines('all'),
+  async () => {
+    const result = await fetchMachines('all', null, '', 1, 1000)
+    return result.items
+  },
   [] as Machine[],
   { immediate: true },
 )

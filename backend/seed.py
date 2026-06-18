@@ -41,22 +41,66 @@ SEED_DATA = [
 ]
 
 
+MANUFACTURER_SEED_DATA = [
+    {
+        "brand_name": "National",
+        "country": "日本",
+        "founded_year": 1925,
+        "description": "松下电器旗下经典品牌，以家用与商用售货机闻名，红色机身是其标志",
+    },
+    {
+        "brand_name": "Fuji Electric",
+        "country": "日本",
+        "founded_year": 1923,
+        "description": "富士电机，日本老牌机电企业，生产的售货机以热饮与面食机型见长",
+    },
+    {
+        "brand_name": "Sanden",
+        "country": "日本",
+        "founded_year": 1943,
+        "description": "三电集团，最初从事汽车空调压缩机，后拓展至自动售货机领域",
+    },
+    {
+        "brand_name": "Crane",
+        "country": "美国",
+        "founded_year": 1855,
+        "description": "Crane 公司是全球最早的商用售货机制造商之一，螺旋出货机构为其专利",
+    },
+    {
+        "brand_name": "Sanyo",
+        "country": "日本",
+        "founded_year": 1947,
+        "description": "三洋电机，曾生产大量饮料售货机，蓝白配色为经典涂装",
+    },
+]
+
+
 def seed_if_empty() -> None:
     """
-     * 若表为空则写入 5 条 seed 数据。
+     * 若表为空则写入 seed 数据。
      """
     conn = get_connection()
     try:
         count = conn.execute("SELECT COUNT(*) FROM machines").fetchone()[0]
-        if count > 0:
-            return
-        conn.executemany(
-            """
-            INSERT INTO machines (model_type, location, categories, is_operational, photo_description)
-            VALUES (:model_type, :location, :categories, :is_operational, :photo_description)
-            """,
-            SEED_DATA,
-        )
+        if count == 0:
+            conn.executemany(
+                """
+                INSERT INTO machines (model_type, location, categories, is_operational, photo_description)
+                VALUES (:model_type, :location, :categories, :is_operational, :photo_description)
+                """,
+                SEED_DATA,
+            )
+
+        mfr_count = conn.execute("SELECT COUNT(*) FROM manufacturers").fetchone()[0]
+        if mfr_count == 0:
+            conn.executemany(
+                """
+                INSERT INTO manufacturers (brand_name, country, founded_year, description)
+                VALUES (:brand_name, :country, :founded_year, :description)
+                """,
+                MANUFACTURER_SEED_DATA,
+            )
+
         conn.commit()
     finally:
         conn.close()

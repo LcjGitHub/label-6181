@@ -18,6 +18,21 @@ const router = createRouter({
       name: 'machine-new',
       component: () => import('@/views/MachineFormView.vue'),
     },
+    {
+      path: '/manufacturers',
+      name: 'manufacturer-list',
+      component: () => import('@/views/ManufacturerListView.vue'),
+    },
+    {
+      path: '/manufacturers/new',
+      name: 'manufacturer-new',
+      component: () => import('@/views/ManufacturerFormView.vue'),
+    },
+    {
+      path: '/manufacturers/:id/edit',
+      name: 'manufacturer-edit',
+      component: () => import('@/views/ManufacturerFormView.vue'),
+    },
   ],
 })
 

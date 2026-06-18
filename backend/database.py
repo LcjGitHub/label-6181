@@ -19,7 +19,7 @@ def get_connection() -> sqlite3.Connection:
 
 def init_db() -> None:
     """
-     * 创建售货机表（若不存在）。
+     * 创建售货机表与厂商表（若不存在）。
      """
     conn = get_connection()
     try:
@@ -32,6 +32,17 @@ def init_db() -> None:
                 categories TEXT NOT NULL,
                 is_operational INTEGER NOT NULL DEFAULT 1,
                 photo_description TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS manufacturers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                brand_name TEXT NOT NULL,
+                country TEXT NOT NULL,
+                founded_year INTEGER NOT NULL,
+                description TEXT NOT NULL DEFAULT ''
             )
             """
         )

@@ -1,43 +1,48 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
+import { useMessage, NButton, NSpace, NPopconfirm, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
-import { deleteMachine, fetchMachines } from '@/api/machines'
-import type { Machine, OperationalFilter } from '@/types/machine'
+import { deleteManufacturer, fetchManufacturers } from '@/api/manufacturers'
+import type { Manufacturer } from '@/types/manufacturer'
 
 const router = useRouter()
 const message = useMessage()
 
-const operationalFilter = ref<OperationalFilter>('all')
-
-const filterOptions = [
-  { label: '全部', value: 'all' as const },
-  { label: '运作中', value: 'true' as const },
-  { label: '已停运', value: 'false' as const },
-]
+const countryFilter = ref('')
 
 const {
-  state: machines,
+  state: manufacturers,
   isLoading,
   execute: reload,
 } = useAsyncState(
-  () => fetchMachines(operationalFilter.value),
+  () => fetchManufacturers(countryFilter.value),
   [],
   { immediate: false, resetOnExecute: false },
 )
 
-/** 筛选变化时重新加载 */
-function onFilterChange(value: OperationalFilter) {
-  operationalFilter.value = value
+const countryOptions = computed(() => {
+  const countries = new Set<string>()
+  for (const m of manufacturers.value) {
+    countries.add(m.country)
+  }
+  return [
+    { label: '全部', value: '' },
+    ...Array.from(countries)
+      .sort()
+      .map((c) => ({ label: c, value: c })),
+  ]
+})
+
+function onFilterChange(value: string) {
+  countryFilter.value = value
   reload()
 }
 
-/** 删除售货机 */
 async function handleDelete(id: number) {
   try {
-    await deleteMachine(id)
+    await deleteManufacturer(id)
     message.success('已删除')
     await reload()
   } catch {
@@ -45,28 +50,19 @@ async function handleDelete(id: number) {
   }
 }
 
-const columns = computed<DataTableColumns<Machine>>(() => [
+const columns = computed<DataTableColumns<Manufacturer>>(() => [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '机型', key: 'model_type', ellipsis: { tooltip: true } },
-  { title: '地点', key: 'location', ellipsis: { tooltip: true } },
-  { title: '售卖品类', key: 'categories', ellipsis: { tooltip: true } },
+  { title: '品牌名称', key: 'brand_name', ellipsis: { tooltip: true } },
   {
-    title: '是否运作',
-    key: 'is_operational',
-    width: 100,
+    title: '所属国家',
+    key: 'country',
+    width: 120,
     render(row) {
-      return h(
-        NTag,
-        { type: row.is_operational ? 'success' : 'default', size: 'small' },
-        { default: () => (row.is_operational ? '运作中' : '已停运') },
-      )
+      return h(NTag, { size: 'small', type: 'info' }, { default: () => row.country })
     },
   },
-  {
-    title: '照片描述',
-    key: 'photo_description',
-    ellipsis: { tooltip: true },
-  },
+  { title: '成立年份', key: 'founded_year', width: 100 },
+  { title: '简介', key: 'description', ellipsis: { tooltip: true } },
   {
     title: '操作',
     key: 'actions',
@@ -79,7 +75,7 @@ const columns = computed<DataTableColumns<Machine>>(() => [
             size: 'small',
             tertiary: true,
             type: 'primary',
-            onClick: () => router.push(`/machines/${row.id}/edit`),
+            onClick: () => router.push(`/manufacturers/${row.id}/edit`),
           },
           { default: () => '编辑' },
         ),
@@ -93,7 +89,7 @@ const columns = computed<DataTableColumns<Machine>>(() => [
                 { size: 'small', tertiary: true, type: 'error' },
                 { default: () => '删除' },
               ),
-            default: () => '确定删除这台售货机？',
+            default: () => '确定删除该厂商？',
           },
         ),
       ])
@@ -110,26 +106,26 @@ onMounted(() => {
   <div class="page">
     <header class="page-header">
       <div>
-        <h1>老式自动售货机机型图鉴</h1>
-        <p class="subtitle">收录经典机型 · 地点 · 售卖品类与运作状态</p>
+        <h1>厂商品牌</h1>
+        <p class="subtitle">收录经典售货机厂商 · 品牌名称 · 所属国家与简介</p>
       </div>
       <NSpace>
-        <NButton @click="router.push('/manufacturers')">厂商品牌</NButton>
-        <NButton type="primary" @click="router.push('/machines/new')">
-          新增机型
+        <NButton @click="router.push('/')">机型图鉴</NButton>
+        <NButton type="primary" @click="router.push('/manufacturers/new')">
+          新增厂商
         </NButton>
       </NSpace>
     </header>
 
-    <NCard class="list-card" title="机器列表">
+    <NCard class="list-card" title="厂商列表">
       <div class="toolbar">
-        <span class="toolbar-label">运作状态筛选</span>
+        <span class="toolbar-label">按国家筛选</span>
         <NRadioGroup
-          :value="operationalFilter"
+          :value="countryFilter"
           @update:value="onFilterChange"
         >
           <NRadioButton
-            v-for="opt in filterOptions"
+            v-for="opt in countryOptions"
             :key="opt.value"
             :value="opt.value"
             :label="opt.label"
@@ -139,11 +135,11 @@ onMounted(() => {
 
       <NDataTable
         :columns="columns"
-        :data="machines"
+        :data="manufacturers"
         :loading="isLoading"
         :bordered="false"
         striped
-        :row-key="(row: Machine) => row.id"
+        :row-key="(row: Manufacturer) => row.id"
       />
     </NCard>
   </div>

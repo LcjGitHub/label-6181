@@ -27,3 +27,28 @@ class MachineOut(MachineBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class ManufacturerBase(BaseModel):
+    """厂商公共字段。"""
+
+    brand_name: str = Field(..., min_length=1, description="品牌名称")
+    country: str = Field(..., min_length=1, description="所属国家")
+    founded_year: int = Field(..., ge=1800, le=2100, description="成立年份")
+    description: str = Field("", description="简介")
+
+
+class ManufacturerCreate(ManufacturerBase):
+    """创建厂商。"""
+
+
+class ManufacturerUpdate(ManufacturerBase):
+    """更新厂商。"""
+
+
+class ManufacturerOut(ManufacturerBase):
+    """厂商响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}

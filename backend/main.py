@@ -6,14 +6,21 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import MachineCreate, MachineOut, MachineUpdate
+from schemas import MachineCreate, MachineOut, MachineUpdate, ManufacturerCreate, ManufacturerOut, ManufacturerUpdate
 from seed import seed_if_empty
 
 app = FastAPI(title="老式自动售货机机型图鉴", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3101", "http://127.0.0.1:3101"],
+    allow_origins=[
+        "http://localhost:3101",
+        "http://127.0.0.1:3101",
+        "http://localhost:3102",
+        "http://127.0.0.1:3102",
+        "http://localhost:3103",
+        "http://127.0.0.1:3103",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -157,5 +164,121 @@ def delete_machine(machine_id: int) -> None:
     conn.commit()
     if cursor.rowcount == 0:
       raise HTTPException(status_code=404, detail="售货机不存在")
+  finally:
+    conn.close()
+
+
+def row_to_manufacturer(row) -> ManufacturerOut:
+  return ManufacturerOut(
+      id=row["id"],
+      brand_name=row["brand_name"],
+      country=row["country"],
+      founded_year=row["founded_year"],
+      description=row["description"],
+  )
+
+
+@app.get("/api/manufacturers", response_model=list[ManufacturerOut])
+def list_manufacturers(
+    country: str = Query("", description="按国家筛选，空字符串表示全部"),
+) -> list[ManufacturerOut]:
+  """获取厂商列表，支持按国家筛选。"""
+  conn = get_connection()
+  try:
+    sql = "SELECT * FROM manufacturers"
+    params: list = []
+    if country:
+      sql += " WHERE country = ?"
+      params.append(country)
+    sql += " ORDER BY id ASC"
+    rows = conn.execute(sql, params).fetchall()
+    return [row_to_manufacturer(row) for row in rows]
+  finally:
+    conn.close()
+
+
+@app.get("/api/manufacturers/{manufacturer_id}", response_model=ManufacturerOut)
+def get_manufacturer(manufacturer_id: int) -> ManufacturerOut:
+  """获取单个厂商。"""
+  conn = get_connection()
+  try:
+    row = conn.execute(
+        "SELECT * FROM manufacturers WHERE id = ?", (manufacturer_id,)
+    ).fetchone()
+    if row is None:
+      raise HTTPException(status_code=404, detail="厂商不存在")
+    return row_to_manufacturer(row)
+  finally:
+    conn.close()
+
+
+@app.post("/api/manufacturers", response_model=ManufacturerOut, status_code=201)
+def create_manufacturer(payload: ManufacturerCreate) -> ManufacturerOut:
+  """新增厂商。"""
+  conn = get_connection()
+  try:
+    cursor = conn.execute(
+        """
+        INSERT INTO manufacturers (brand_name, country, founded_year, description)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            payload.brand_name,
+            payload.country,
+            payload.founded_year,
+            payload.description,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM manufacturers WHERE id = ?", (cursor.lastrowid,)
+    ).fetchone()
+    return row_to_manufacturer(row)
+  finally:
+    conn.close()
+
+
+@app.put("/api/manufacturers/{manufacturer_id}", response_model=ManufacturerOut)
+def update_manufacturer(manufacturer_id: int, payload: ManufacturerUpdate) -> ManufacturerOut:
+  """更新厂商。"""
+  conn = get_connection()
+  try:
+    existing = conn.execute(
+        "SELECT id FROM manufacturers WHERE id = ?", (manufacturer_id,)
+    ).fetchone()
+    if existing is None:
+      raise HTTPException(status_code=404, detail="厂商不存在")
+    conn.execute(
+        """
+        UPDATE manufacturers
+        SET brand_name = ?, country = ?, founded_year = ?, description = ?
+        WHERE id = ?
+        """,
+        (
+            payload.brand_name,
+            payload.country,
+            payload.founded_year,
+            payload.description,
+            manufacturer_id,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM manufacturers WHERE id = ?", (manufacturer_id,)
+    ).fetchone()
+    return row_to_manufacturer(row)
+  finally:
+    conn.close()
+
+
+@app.delete("/api/manufacturers/{manufacturer_id}", status_code=204)
+def delete_manufacturer(manufacturer_id: int) -> None:
+  """删除厂商。"""
+  conn = get_connection()
+  try:
+    cursor = conn.execute("DELETE FROM manufacturers WHERE id = ?", (manufacturer_id,))
+    conn.commit()
+    if cursor.rowcount == 0:
+      raise HTTPException(status_code=404, detail="厂商不存在")
   finally:
     conn.close()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NButton, NCard, NGrid, NGridItem, NSpace, NList, NListItem } from 'naive-ui'
+import { useMessage, NButton, NCard, NGrid, NGridItem, NSpace, NList, NListItem, NSkeleton, NSpin } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { fetchStatistics } from '@/api/machines'
 import type { StatisticsData } from '@/types/machine'
@@ -9,15 +9,29 @@ import type { StatisticsData } from '@/types/machine'
 const router = useRouter()
 const message = useMessage()
 
+const initialState: StatisticsData = {
+  total_machines: 0,
+  operational_count: 0,
+  out_of_service_count: 0,
+  location_distribution: [],
+  category_rankings: [],
+}
+
+const isReady = ref(false)
+
 const {
   state: statistics,
+  isLoading,
   execute: reload,
 } = useAsyncState<StatisticsData>(
   async () => {
     try {
-      return await fetchStatistics()
+      const result = await fetchStatistics()
+      isReady.value = true
+      return result
     } catch {
       message.error('加载统计数据失败')
+      isReady.value = true
       return {
         total_machines: 0,
         operational_count: 0,
@@ -27,13 +41,7 @@ const {
       }
     }
   },
-  {
-    total_machines: 0,
-    operational_count: 0,
-    out_of_service_count: 0,
-    location_distribution: [],
-    category_rankings: [],
-  },
+  initialState,
   { immediate: false, resetOnExecute: false },
 )
 
@@ -52,6 +60,11 @@ function getBarWidth(count: number, max: number): string {
   return `${(count / max) * 100}%`
 }
 
+async function handleRefresh() {
+  isReady.value = false
+  await reload()
+}
+
 onMounted(() => {
   reload()
 })
@@ -66,85 +79,141 @@ onMounted(() => {
       </div>
       <NSpace>
         <NButton @click="router.push('/')">返回列表</NButton>
-        <NButton type="primary" @click="() => reload()">刷新数据</NButton>
+        <NButton type="primary" :loading="isLoading" @click="handleRefresh">刷新数据</NButton>
       </NSpace>
     </header>
 
-    <NGrid :x-gap="20" :y-gap="20" :cols="3" class="stats-cards">
-      <NGridItem>
-        <NCard class="stat-card stat-card-total">
-          <div class="stat-icon">📦</div>
-          <div class="stat-content">
-            <div class="stat-label">售货机总数</div>
-            <div class="stat-value">{{ statistics.total_machines }}</div>
-          </div>
-        </NCard>
-      </NGridItem>
-      <NGridItem>
-        <NCard class="stat-card stat-card-operational">
-          <div class="stat-icon">✅</div>
-          <div class="stat-content">
-            <div class="stat-label">运作中</div>
-            <div class="stat-value">{{ statistics.operational_count }}</div>
-          </div>
-        </NCard>
-      </NGridItem>
-      <NGridItem>
-        <NCard class="stat-card stat-card-out">
-          <div class="stat-icon">⚠️</div>
-          <div class="stat-content">
-            <div class="stat-label">已停运</div>
-            <div class="stat-value">{{ statistics.out_of_service_count }}</div>
-          </div>
-        </NCard>
-      </NGridItem>
-    </NGrid>
+    <NSpin :show="isLoading && !isReady" :stroke-width="18">
+      <NGrid :x-gap="20" :y-gap="20" :cols="3" class="stats-cards">
+        <NGridItem>
+          <NCard class="stat-card stat-card-total">
+            <template v-if="!isReady">
+              <NSkeleton animated width="56" height="56" circle />
+              <div class="stat-content">
+                <NSkeleton animated text style="width: 100px" />
+                <NSkeleton animated text style="width: 80px; height: 36px" />
+              </div>
+            </template>
+            <template v-else>
+              <div class="stat-icon">📦</div>
+              <div class="stat-content">
+                <div class="stat-label">售货机总数</div>
+                <div class="stat-value">{{ statistics.total_machines }}</div>
+              </div>
+            </template>
+          </NCard>
+        </NGridItem>
+        <NGridItem>
+          <NCard class="stat-card stat-card-operational">
+            <template v-if="!isReady">
+              <NSkeleton animated width="56" height="56" circle />
+              <div class="stat-content">
+                <NSkeleton animated text style="width: 80px" />
+                <NSkeleton animated text style="width: 80px; height: 36px" />
+              </div>
+            </template>
+            <template v-else>
+              <div class="stat-icon">✅</div>
+              <div class="stat-content">
+                <div class="stat-label">运作中</div>
+                <div class="stat-value">{{ statistics.operational_count }}</div>
+              </div>
+            </template>
+          </NCard>
+        </NGridItem>
+        <NGridItem>
+          <NCard class="stat-card stat-card-out">
+            <template v-if="!isReady">
+              <NSkeleton animated width="56" height="56" circle />
+              <div class="stat-content">
+                <NSkeleton animated text style="width: 80px" />
+                <NSkeleton animated text style="width: 80px; height: 36px" />
+              </div>
+            </template>
+            <template v-else>
+              <div class="stat-icon">⚠️</div>
+              <div class="stat-content">
+                <div class="stat-label">已停运</div>
+                <div class="stat-value">{{ statistics.out_of_service_count }}</div>
+              </div>
+            </template>
+          </NCard>
+        </NGridItem>
+      </NGrid>
 
-    <NGrid :x-gap="20" :y-gap="20" :cols="1" :l-cols="2" class="stats-charts">
-      <NGridItem>
-        <NCard title="地点分布汇总" class="chart-card">
-          <div v-if="!statistics.location_distribution.length" class="empty-state">
-            暂无数据
-          </div>
-          <NList v-else bordered class="stats-list">
-            <NListItem v-for="loc in statistics.location_distribution" :key="loc.location">
-              <div class="list-item-content">
-                <span class="item-name">{{ loc.location }}</span>
-                <span class="item-count">{{ loc.count }} 台</span>
+      <NGrid :x-gap="20" :y-gap="20" :cols="1" :l-cols="2" class="stats-charts">
+        <NGridItem>
+          <NCard title="地点分布汇总" class="chart-card">
+            <template v-if="!isReady">
+              <div class="skeleton-list">
+                <div v-for="i in 5" :key="i" class="skeleton-item">
+                  <div class="skeleton-item-row">
+                    <NSkeleton animated text style="width: 180px" />
+                    <NSkeleton animated text style="width: 60px" />
+                  </div>
+                  <NSkeleton animated style="height: 8px; width: 100%; border-radius: 4px" />
+                </div>
               </div>
-              <div class="bar-container">
-                <div
-                  class="bar bar-location"
-                  :style="{ width: getBarWidth(loc.count, maxLocationCount) }"
-                />
+            </template>
+            <template v-else>
+              <div v-if="!statistics.location_distribution.length" class="empty-state">
+                暂无数据
               </div>
-            </NListItem>
-          </NList>
-        </NCard>
-      </NGridItem>
-      <NGridItem>
-        <NCard title="售卖品类排行" class="chart-card">
-          <div v-if="!statistics.category_rankings.length" class="empty-state">
-            暂无数据
-          </div>
-          <NList v-else bordered class="stats-list">
-            <NListItem v-for="(cat, index) in statistics.category_rankings" :key="cat.category">
-              <div class="list-item-content">
-                <span class="item-rank" :class="`rank-${index + 1}`">{{ index + 1 }}</span>
-                <span class="item-name">{{ cat.category }}</span>
-                <span class="item-count">{{ cat.count }} 次</span>
+              <NList v-else bordered class="stats-list">
+                <NListItem v-for="loc in statistics.location_distribution" :key="loc.location">
+                  <div class="list-item-content">
+                    <span class="item-name">{{ loc.location }}</span>
+                    <span class="item-count">{{ loc.count }} 台</span>
+                  </div>
+                  <div class="bar-container">
+                    <div
+                      class="bar bar-location"
+                      :style="{ width: getBarWidth(loc.count, maxLocationCount) }"
+                    />
+                  </div>
+                </NListItem>
+              </NList>
+            </template>
+          </NCard>
+        </NGridItem>
+        <NGridItem>
+          <NCard title="售卖品类排行" class="chart-card">
+            <template v-if="!isReady">
+              <div class="skeleton-list">
+                <div v-for="i in 5" :key="i" class="skeleton-item">
+                  <div class="skeleton-item-row">
+                    <NSkeleton animated width="24" height="24" circle />
+                    <NSkeleton animated text style="width: 160px" />
+                    <NSkeleton animated text style="width: 60px" />
+                  </div>
+                  <NSkeleton animated style="height: 8px; width: 100%; border-radius: 4px" />
+                </div>
               </div>
-              <div class="bar-container">
-                <div
-                  class="bar bar-category"
-                  :style="{ width: getBarWidth(cat.count, maxCategoryCount) }"
-                />
+            </template>
+            <template v-else>
+              <div v-if="!statistics.category_rankings.length" class="empty-state">
+                暂无数据
               </div>
-            </NListItem>
-          </NList>
-        </NCard>
-      </NGridItem>
-    </NGrid>
+              <NList v-else bordered class="stats-list">
+                <NListItem v-for="(cat, index) in statistics.category_rankings" :key="cat.category">
+                  <div class="list-item-content">
+                    <span class="item-rank" :class="`rank-${index + 1}`">{{ index + 1 }}</span>
+                    <span class="item-name">{{ cat.category }}</span>
+                    <span class="item-count">{{ cat.count }} 次</span>
+                  </div>
+                  <div class="bar-container">
+                    <div
+                      class="bar bar-category"
+                      :style="{ width: getBarWidth(cat.count, maxCategoryCount) }"
+                    />
+                  </div>
+                </NListItem>
+              </NList>
+            </template>
+          </NCard>
+        </NGridItem>
+      </NGrid>
+    </NSpin>
   </div>
 </template>
 
@@ -312,5 +381,24 @@ onMounted(() => {
 
 .bar-category {
   background: linear-gradient(90deg, #18a058, #36d399);
+}
+
+.skeleton-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 </style>

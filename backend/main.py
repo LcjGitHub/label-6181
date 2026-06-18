@@ -711,7 +711,7 @@ def get_statistics() -> StatisticsOut:
     for row in category_rows:
       categories = row["categories"]
       if categories:
-        for cat in categories.split(","):
+        for cat in categories.split("、"):
           cat = cat.strip()
           if cat:
             category_counts[cat] = category_counts.get(cat, 0) + 1

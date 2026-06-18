@@ -78,10 +78,19 @@ cd frontend && npm install && npm run dev
 - 售货机列表与售货机详情加载时：标签接口与售货机接口**并行请求**，分别捕获异常，互不阻塞
 - 启动时自动写入 8 条示例标签与 13 条售货机标签关联数据
 
+### 数据统计看板
+
+- 核心数字卡片展示：售货机总数、运作中数量、已停运数量
+- 各地点分布汇总：条形图展示各地点售货机数量，按数量倒序排列
+- 各售卖品类出现次数排行：带排名标识的条形图，品类按中文顿号「、」拆分后统计出现次数
+- 页面加载时展示骨架屏加载状态，数据就绪后平滑过渡显示
+- 售货机列表页顶部导航提供「数据统计」入口按钮
+
 #### 页面
 
 | 路径 | 说明 |
 |------|------|
+| `/statistics` | 数据统计看板（核心指标 + 地点分布 + 品类排行） |
 | `/tags` | 标签列表页（标签管理） |
 | `/tags/new` | 新增标签 |
 | `/tags/:id/edit` | 编辑标签 |
@@ -195,3 +204,37 @@ cd frontend && npm install && npm run dev
 | `inspection_time` | string | 是 | 巡检时间（格式 YYYY-MM-DD HH:mm，精确到分钟） |
 | `result` | string | 是 | 巡检结果，仅允许：`正常` 或 `异常` |
 | `remark` | string | 否 | 异常说明（结果为异常时建议填写） |
+
+### 数据统计
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/statistics` | 获取统计看板聚合数据 |
+
+统计响应字段说明：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `total_machines` | integer | 售货机总数 |
+| `operational_count` | integer | 运作中售货机数量 |
+| `out_of_service_count` | integer | 已停运售货机数量 |
+| `location_distribution` | array | 地点分布列表，每项含 `location`（地点名称）和 `count`（数量），按数量倒序排列 |
+| `category_rankings` | array | 售卖品类排行，每项含 `category`（品类名称）和 `count`（出现次数），按次数倒序；品类按中文顿号「、」拆分后统计 |
+
+响应示例：
+
+```json
+{
+  "total_machines": 5,
+  "operational_count": 3,
+  "out_of_service_count": 2,
+  "location_distribution": [
+    {"location": "东京涩谷站东口", "count": 1},
+    {"location": "大阪道顿堀步行街", "count": 1}
+  ],
+  "category_rankings": [
+    {"category": "罐装饮料", "count": 1},
+    {"category": "咖啡", "count": 1}
+  ]
+}
+```

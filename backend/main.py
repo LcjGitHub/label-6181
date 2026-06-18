@@ -10,6 +10,7 @@ from schemas import (
     MachineCreate, MachineOut, MachineUpdate,
     ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
     MaintenanceCreate, MaintenanceOut, MaintenanceUpdate,
+    InspectionCreate, InspectionOut,
 )
 from seed import seed_if_empty
 
@@ -412,5 +413,72 @@ def delete_maintenance(maintenance_id: int) -> None:
     conn.commit()
     if cursor.rowcount == 0:
       raise HTTPException(status_code=404, detail="维保记录不存在")
+  finally:
+    conn.close()
+
+
+def row_to_inspection(row) -> InspectionOut:
+  """
+   * 将数据库行转为巡检记录响应模型。
+   * @param {sqlite3.Row} row
+   * @returns {InspectionOut}
+  """
+  return InspectionOut(
+      id=row["id"],
+      machine_id=row["machine_id"],
+      inspection_time=row["inspection_time"],
+      result=row["result"],
+      remark=row["remark"],
+  )
+
+
+@app.get("/api/inspections", response_model=list[InspectionOut])
+def list_inspections(
+    result: Literal["all", "正常", "异常"] = Query(
+        "all", description="巡检结果筛选：all / 正常 / 异常"
+    ),
+) -> list[InspectionOut]:
+  """获取巡检记录列表，支持按巡检结果筛选。"""
+  conn = get_connection()
+  try:
+    sql = "SELECT * FROM inspections"
+    params: list = []
+    if result == "正常":
+      sql += " WHERE result = ?"
+      params.append("正常")
+    elif result == "异常":
+      sql += " WHERE result = ?"
+      params.append("异常")
+    sql += " ORDER BY inspection_time DESC, id DESC"
+    rows = conn.execute(sql, params).fetchall()
+    return [row_to_inspection(row) for row in rows]
+  finally:
+    conn.close()
+
+
+@app.post("/api/inspections", response_model=InspectionOut, status_code=201)
+def create_inspection(payload: InspectionCreate) -> InspectionOut:
+  """新增巡检记录。"""
+  conn = get_connection()
+  try:
+    if not _machine_exists(conn, payload.machine_id):
+      raise HTTPException(status_code=404, detail="关联的售货机不存在")
+    cursor = conn.execute(
+        """
+        INSERT INTO inspections (machine_id, inspection_time, result, remark)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            payload.machine_id,
+            payload.inspection_time,
+            payload.result,
+            payload.remark,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM inspections WHERE id = ?", (cursor.lastrowid,)
+    ).fetchone()
+    return row_to_inspection(row)
   finally:
     conn.close()

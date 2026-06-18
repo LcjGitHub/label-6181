@@ -53,6 +53,16 @@ const router = createRouter({
       name: 'manufacturer-edit',
       component: () => import('@/views/ManufacturerFormView.vue'),
     },
+    {
+      path: '/inspections',
+      name: 'inspection-list',
+      component: () => import('@/views/InspectionListView.vue'),
+    },
+    {
+      path: '/inspections/new',
+      name: 'inspection-new',
+      component: () => import('@/views/InspectionFormView.vue'),
+    },
   ],
 })
 

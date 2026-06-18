@@ -78,3 +78,24 @@ class MaintenanceOut(MaintenanceBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class InspectionBase(BaseModel):
+    """巡检记录公共字段。"""
+
+    machine_id: int = Field(..., description="售货机编号")
+    inspection_time: str = Field(..., min_length=1, description="巡检时间，格式 YYYY-MM-DD HH:mm")
+    result: str = Field(..., min_length=1, description="巡检结果：正常 或 异常")
+    remark: str = Field("", description="异常说明")
+
+
+class InspectionCreate(InspectionBase):
+    """创建巡检记录。"""
+
+
+class InspectionOut(InspectionBase):
+    """巡检记录响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}

@@ -70,9 +70,22 @@ const columns = computed<DataTableColumns<Machine>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 240,
+    width: 300,
     render(row) {
       return h(NSpace, { size: 'small' }, () => [
+        h(
+          NButton,
+          {
+            size: 'small',
+            tertiary: true,
+            type: 'warning',
+            onClick: () => router.push({
+              path: '/inspections/new',
+              query: { machine_id: String(row.id) },
+            }),
+          },
+          { default: () => '巡检' },
+        ),
         h(
           NButton,
           {
@@ -124,6 +137,8 @@ onMounted(() => {
         <p class="subtitle">收录经典机型 · 地点 · 售卖品类与运作状态</p>
       </div>
       <NSpace>
+        <NButton @click="router.push('/maintenances')">维保记录</NButton>
+        <NButton @click="router.push('/inspections')">巡检打卡</NButton>
         <NButton @click="router.push('/manufacturers')">厂商品牌</NButton>
         <NButton type="primary" @click="router.push('/machines/new')">
           新增机型

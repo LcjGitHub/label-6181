@@ -98,6 +98,39 @@ MAINTENANCE_SEED_DATA = [
     },
 ]
 
+INSPECTION_SEED_DATA = [
+    {
+        "machine_id": 1,
+        "inspection_time": "2026-06-15 09:30",
+        "result": "正常",
+        "remark": "",
+    },
+    {
+        "machine_id": 2,
+        "inspection_time": "2026-06-16 10:15",
+        "result": "正常",
+        "remark": "",
+    },
+    {
+        "machine_id": 3,
+        "inspection_time": "2026-06-16 14:20",
+        "result": "异常",
+        "remark": "玻璃门有裂纹，内部灯管已熄灭，需立即维修",
+    },
+    {
+        "machine_id": 4,
+        "inspection_time": "2026-06-17 08:45",
+        "result": "正常",
+        "remark": "",
+    },
+    {
+        "machine_id": 5,
+        "inspection_time": "2026-06-17 16:00",
+        "result": "异常",
+        "remark": "投币口生锈，显示屏数字残缺，建议安排更换配件",
+    },
+]
+
 
 def seed_if_empty() -> None:
     """
@@ -133,6 +166,16 @@ def seed_if_empty() -> None:
                 VALUES (:machine_id, :maintenance_date, :maintenance_type, :handler, :description)
                 """,
                 MAINTENANCE_SEED_DATA,
+            )
+
+        insp_count = conn.execute("SELECT COUNT(*) FROM inspections").fetchone()[0]
+        if insp_count == 0:
+            conn.executemany(
+                """
+                INSERT INTO inspections (machine_id, inspection_time, result, remark)
+                VALUES (:machine_id, :inspection_time, :result, :remark)
+                """,
+                INSPECTION_SEED_DATA,
             )
 
         conn.commit()

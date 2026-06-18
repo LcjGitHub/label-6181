@@ -11,6 +11,7 @@ const router = useRouter()
 const message = useMessage()
 
 const countryFilter = ref('')
+const allCountries = ref<string[]>([])
 
 const {
   state: manufacturers,
@@ -23,17 +24,22 @@ const {
 )
 
 const countryOptions = computed(() => {
-  const countries = new Set<string>()
-  for (const m of manufacturers.value) {
-    countries.add(m.country)
-  }
   return [
     { label: '全部', value: '' },
-    ...Array.from(countries)
+    ...allCountries.value
       .sort()
       .map((c) => ({ label: c, value: c })),
   ]
 })
+
+async function loadCountries() {
+  const all = await fetchManufacturers()
+  const set = new Set<string>()
+  for (const m of all) {
+    set.add(m.country)
+  }
+  allCountries.value = Array.from(set)
+}
 
 function onFilterChange(value: string) {
   countryFilter.value = value
@@ -44,6 +50,7 @@ async function handleDelete(id: number) {
   try {
     await deleteManufacturer(id)
     message.success('已删除')
+    await loadCountries()
     await reload()
   } catch {
     message.error('删除失败')
@@ -97,7 +104,8 @@ const columns = computed<DataTableColumns<Manufacturer>>(() => [
   },
 ])
 
-onMounted(() => {
+onMounted(async () => {
+  await loadCountries()
   reload()
 })
 </script>

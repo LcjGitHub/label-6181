@@ -43,15 +43,33 @@ cd frontend && npm install && npm run dev
 
 ## 功能范围（MVP）
 
+### 售货机机型图鉴
+
 - 机器列表，支持按「全部 / 运作中 / 已停运」筛选
 - 新增、编辑、删除售货机记录
 - 字段：机型、地点、售卖品类、是否运作、照片描述
+
+### 厂商品牌
+
+- 厂商列表，支持按国家筛选（筛选项从全部数据提取，筛选后不会消失）
+- 新增、编辑、删除厂商记录
+- 字段：品牌名称、所属国家、成立年份、简介
+
+#### 页面
+
+| 路径 | 说明 |
+|------|------|
+| `/manufacturers` | 厂商列表页 |
+| `/manufacturers/new` | 新增厂商 |
+| `/manufacturers/:id/edit` | 编辑厂商 |
 
 ## 未包含
 
 登录、JWT、Redis、Docker、MySQL/PostgreSQL 等均未实现。
 
 ## API 概览
+
+### 售货机
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -60,3 +78,22 @@ cd frontend && npm install && npm run dev
 | POST | `/api/machines` | 新增 |
 | PUT | `/api/machines/{id}` | 更新 |
 | DELETE | `/api/machines/{id}` | 删除 |
+
+### 厂商
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/manufacturers?country=` | 列表（按国家筛选，空字符串表示全部） |
+| GET | `/api/manufacturers/{id}` | 详情 |
+| POST | `/api/manufacturers` | 新增 |
+| PUT | `/api/manufacturers/{id}` | 更新 |
+| DELETE | `/api/manufacturers/{id}` | 删除 |
+
+厂商字段说明：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `brand_name` | string | 是 | 品牌名称 |
+| `country` | string | 是 | 所属国家 |
+| `founded_year` | integer | 是 | 成立年份（1800–2100） |
+| `description` | string | 否 | 简介 |

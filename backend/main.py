@@ -13,14 +13,7 @@ app = FastAPI(title="老式自动售货机机型图鉴", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3101",
-        "http://127.0.0.1:3101",
-        "http://localhost:3102",
-        "http://127.0.0.1:3102",
-        "http://localhost:3103",
-        "http://127.0.0.1:3103",
-    ],
+    allow_origins=["http://localhost:3101", "http://127.0.0.1:3101"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

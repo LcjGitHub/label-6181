@@ -23,6 +23,14 @@ const filterOptions = [
   { label: '已停运', value: 'false' as const },
 ]
 
+const hasActiveFilters = computed(() => {
+  return (
+    searchKeyword.value.trim() !== '' ||
+    operationalFilter.value !== 'all' ||
+    tagFilter.value !== null
+  )
+})
+
 const tagFilterOptions = computed(() => [
   { label: '全部标签', value: null },
   ...allTags.value.map((t) => ({ label: t.name, value: t.id })),
@@ -42,7 +50,7 @@ const {
     }
   },
   [],
-  { immediate: false, resetOnExecute: false },
+  { immediate: false, resetOnExecute: true },
 )
 
 async function loadTags() {
@@ -245,7 +253,16 @@ onMounted(() => {
         :bordered="false"
         striped
         :row-key="(row: Machine) => row.id"
-      />
+      >
+        <template #empty>
+          <div v-if="!isLoading && hasActiveFilters" class="empty-state no-match">
+            未找到匹配结果，请尝试调整筛选条件或关键词
+          </div>
+          <div v-else-if="!isLoading" class="empty-state">
+            暂无数据，点击右上角「新增机型」添加售货机记录
+          </div>
+        </template>
+      </NDataTable>
     </NCard>
   </div>
 </template>
@@ -300,5 +317,16 @@ onMounted(() => {
   height: 20px;
   background: #e0d5c2;
   margin: 0 4px;
+}
+
+.empty-state {
+  padding: 48px 0;
+  text-align: center;
+  color: #999;
+  font-size: 0.95rem;
+}
+
+.empty-state.no-match {
+  color: #d08a3a;
 }
 </style>

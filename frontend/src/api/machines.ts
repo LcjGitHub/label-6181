@@ -11,6 +11,7 @@ const http = axios.create({
  * 获取售货机列表
  * @param operational - 运作状态筛选
  * @param tagId - 标签 ID 筛选，null 表示全部
+ * @param keyword - 关键词搜索，按机型、地点、售卖品类、照片描述模糊匹配，空字符串表示不搜索；可与运作状态、标签筛选组合使用
  */
 export async function fetchMachines(
   operational: OperationalFilter = 'all',

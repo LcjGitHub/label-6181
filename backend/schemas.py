@@ -38,16 +38,22 @@ class MachineBase(BaseModel):
     photo_description: str = Field("", description="照片描述")
 
 
+class MachineTagSet(BaseModel):
+    """为售货机设置标签的专用请求体。"""
+
+    tag_ids: list[int] = Field(..., description="关联标签 ID 列表（空数组表示清除所有标签）")
+
+
 class MachineCreate(MachineBase):
     """创建售货机。"""
 
-    tag_ids: list[int] = Field([], description="关联标签 ID 列表")
+    tag_ids: list[int] | None = Field(None, description="（可选）关联标签 ID 列表，省略则不设置标签")
 
 
 class MachineUpdate(MachineBase):
     """更新售货机。"""
 
-    tag_ids: list[int] = Field([], description="关联标签 ID 列表")
+    tag_ids: list[int] | None = Field(None, description="（可选）关联标签 ID 列表，省略则不修改现有标签")
 
 
 class MachineOut(MachineBase):

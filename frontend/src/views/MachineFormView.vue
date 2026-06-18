@@ -75,7 +75,11 @@ function renderTagLabel(option: SelectOption) {
 }
 
 async function loadTags() {
-  allTags.value = await fetchTags()
+  try {
+    allTags.value = await fetchTags()
+  } catch {
+    message.error('加载标签列表失败，标签选择将不可用')
+  }
 }
 
 /** 编辑模式加载数据 */
@@ -93,7 +97,7 @@ async function loadMachine() {
       tag_ids: data.tags ? data.tags.map((t) => t.id) : [],
     })
   } catch {
-    message.error('加载失败')
+    message.error('加载售货机数据失败')
     router.push('/')
   } finally {
     loading.value = false
@@ -120,9 +124,8 @@ async function handleSubmit() {
   }
 }
 
-onMounted(async () => {
-  await loadTags()
-  await loadMachine()
+onMounted(() => {
+  Promise.all([loadTags(), loadMachine()])
 })
 </script>
 

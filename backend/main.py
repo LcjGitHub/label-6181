@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import get_connection, init_db
 from schemas import (
     TagCreate, TagOut, TagUpdate,
-    MachineCreate, MachineOut, MachineUpdate,
+    MachineCreate, MachineOut, MachineUpdate, MachineTagSet,
     ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
     MaintenanceCreate, MaintenanceOut, MaintenanceUpdate,
     InspectionCreate, InspectionOut,
@@ -256,7 +256,7 @@ def get_machine(machine_id: int) -> MachineOut:
 
 @app.post("/api/machines", response_model=MachineOut, status_code=201)
 def create_machine(payload: MachineCreate) -> MachineOut:
-  """新增售货机。"""
+  """新增售货机。若 tag_ids 为 None 则不设置标签。"""
   conn = get_connection()
   try:
     cursor = conn.execute(
@@ -273,7 +273,8 @@ def create_machine(payload: MachineCreate) -> MachineOut:
         ),
     )
     machine_id = cursor.lastrowid
-    set_machine_tags(conn, machine_id, payload.tag_ids)
+    if payload.tag_ids is not None:
+      set_machine_tags(conn, machine_id, payload.tag_ids)
     conn.commit()
     row = conn.execute(
         "SELECT * FROM machines WHERE id = ?", (machine_id,)
@@ -285,7 +286,7 @@ def create_machine(payload: MachineCreate) -> MachineOut:
 
 @app.put("/api/machines/{machine_id}", response_model=MachineOut)
 def update_machine(machine_id: int, payload: MachineUpdate) -> MachineOut:
-  """更新售货机。"""
+  """更新售货机。若 tag_ids 为 None 则不修改现有标签。"""
   conn = get_connection()
   try:
     existing = conn.execute(
@@ -309,12 +310,34 @@ def update_machine(machine_id: int, payload: MachineUpdate) -> MachineOut:
             machine_id,
         ),
     )
-    set_machine_tags(conn, machine_id, payload.tag_ids)
+    if payload.tag_ids is not None:
+      set_machine_tags(conn, machine_id, payload.tag_ids)
     conn.commit()
     row = conn.execute(
         "SELECT * FROM machines WHERE id = ?", (machine_id,)
     ).fetchone()
     return row_to_machine(row, conn)
+  finally:
+    conn.close()
+
+
+@app.put("/api/machines/{machine_id}/tags", response_model=list[TagOut])
+def set_machine_tags_endpoint(machine_id: int, payload: MachineTagSet) -> list[TagOut]:
+  """
+  为售货机设置标签（专用接口）。
+  传入标签编号列表，空数组表示清除所有标签。
+  返回设置完成后该售货机关联的全部标签。
+  """
+  conn = get_connection()
+  try:
+    existing = conn.execute(
+        "SELECT id FROM machines WHERE id = ?", (machine_id,)
+    ).fetchone()
+    if existing is None:
+      raise HTTPException(status_code=404, detail="售货机不存在")
+    set_machine_tags(conn, machine_id, payload.tag_ids)
+    conn.commit()
+    return get_machine_tags(conn, machine_id)
   finally:
     conn.close()
 

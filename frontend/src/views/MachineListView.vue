@@ -32,13 +32,24 @@ const {
   isLoading,
   execute: reload,
 } = useAsyncState(
-  () => fetchMachines(operationalFilter.value, tagFilter.value),
+  async () => {
+    try {
+      return await fetchMachines(operationalFilter.value, tagFilter.value)
+    } catch {
+      message.error('加载售货机列表失败')
+      return []
+    }
+  },
   [],
   { immediate: false, resetOnExecute: false },
 )
 
 async function loadTags() {
-  allTags.value = await fetchTags()
+  try {
+    allTags.value = await fetchTags()
+  } catch {
+    message.error('加载标签列表失败，标签筛选将不可用')
+  }
 }
 
 /** 筛选变化时重新加载 */
@@ -166,9 +177,8 @@ const columns = computed<DataTableColumns<Machine>>(() => [
   },
 ])
 
-onMounted(async () => {
-  await loadTags()
-  reload()
+onMounted(() => {
+  Promise.all([loadTags(), reload()])
 })
 </script>
 

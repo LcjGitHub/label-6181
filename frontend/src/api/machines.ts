@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { Machine, MachineForm, OperationalFilter } from '@/types/machine'
+import type { Tag } from '@/types/tag'
 
 const http = axios.create({
   baseURL: '/api',
@@ -60,4 +61,19 @@ export async function updateMachine(
  */
 export async function deleteMachine(id: number): Promise<void> {
   await http.delete(`/machines/${id}`)
+}
+
+/**
+ * 为售货机设置标签（专用接口）
+ * @param machineId - 售货机 ID
+ * @param tagIds - 标签 ID 列表，空数组表示清除所有标签
+ */
+export async function setMachineTags(
+  machineId: number,
+  tagIds: number[],
+): Promise<Tag[]> {
+  const { data } = await http.put<Tag[]>(`/machines/${machineId}/tags`, {
+    tag_ids: tagIds,
+  })
+  return data
 }

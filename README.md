@@ -69,10 +69,22 @@ cd frontend && npm install && npm run dev
 - 售货机列表操作列提供「巡检」快捷入口，自动带入售货机编号
 - 启动时自动写入 5 条示例巡检数据
 
+### 机型标签
+
+- 标签管理页：维护标签名称与颜色标识（12 色预设 + 自定义颜色选择器），支持增删改查
+- 标签与售货机多对多关联：一台售货机可绑定多个标签，标签可复用
+- 售货机表单页：多选标签控件，选项带色块标识，空状态提示跳转标签管理
+- 售货机列表页：新增「按标签筛选」下拉，操作与运作状态筛选联动；列表新增「标签」列展示彩色标签
+- 售货机列表与售货机详情加载时：标签接口与售货机接口**并行请求**，分别捕获异常，互不阻塞
+- 启动时自动写入 8 条示例标签与 13 条售货机标签关联数据
+
 #### 页面
 
 | 路径 | 说明 |
 |------|------|
+| `/tags` | 标签列表页（标签管理） |
+| `/tags/new` | 新增标签 |
+| `/tags/:id/edit` | 编辑标签 |
 | `/manufacturers` | 厂商列表页 |
 | `/manufacturers/new` | 新增厂商 |
 | `/manufacturers/:id/edit` | 编辑厂商 |
@@ -93,11 +105,41 @@ cd frontend && npm install && npm run dev
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/machines?operational=all\|true\|false` | 列表（运作状态筛选） |
-| GET | `/api/machines/{id}` | 详情 |
-| POST | `/api/machines` | 新增 |
-| PUT | `/api/machines/{id}` | 更新 |
+| GET | `/api/machines?operational=all\|true\|false&tag_id=` | 列表（运作状态筛选 + 标签筛选，`tag_id` 为可选整数） |
+| GET | `/api/machines/{id}` | 详情（响应体包含关联的 `tags` 列表） |
+| POST | `/api/machines` | 新增（请求体中 `tag_ids` 可选，省略时不设置标签） |
+| PUT | `/api/machines/{id}` | 更新（请求体中 `tag_ids` 可选，省略时不修改现有标签） |
+| PUT | `/api/machines/{id}/tags` | **为售货机设置标签（专用接口）**，传入 `{ tag_ids: [1,2,3] }`，空数组表示清除 |
 | DELETE | `/api/machines/{id}` | 删除 |
+
+售货机字段说明：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `model_type` | string | 是 | 机型 |
+| `location` | string | 是 | 地点 |
+| `categories` | string | 是 | 售卖品类 |
+| `is_operational` | boolean | 否 | 是否运作，默认 `true` |
+| `photo_description` | string | 否 | 照片描述，默认空字符串 |
+| `tag_ids` | number[] \| null | 否 | **仅用于创建/更新请求体**，关联标签 ID 列表；省略（null）时不操作标签 |
+| `tags` | Tag[] | — | **仅用于响应体**，该售货机关联的完整标签列表（含 id / name / color） |
+
+### 机型标签
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/tags` | 获取全部标签列表 |
+| GET | `/api/tags/{id}` | 获取单个标签 |
+| POST | `/api/tags` | 新增标签（`name` 唯一） |
+| PUT | `/api/tags/{id}` | 更新标签（`name` 唯一校验） |
+| DELETE | `/api/tags/{id}` | 删除标签（售货机上的关联会被级联清除） |
+
+标签字段说明：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | string | 是 | 标签名称，1–50 字符，全局唯一 |
+| `color` | string | 否 | 颜色标识（HEX 色值），默认 `#18a058` |
 
 ### 厂商
 

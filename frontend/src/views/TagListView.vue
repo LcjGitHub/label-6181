@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, h, onMounted } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NButton, NSpace, NPopconfirm, NTag, NCard } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
-import { deleteTag, fetchTags } from '@/api/tags'
+import { deleteTag, batchDeleteTags, fetchTags } from '@/api/tags'
 import type { Tag } from '@/types/tag'
 
 const router = useRouter()
 const message = useMessage()
+const checkedRowKeys = ref<number[]>([])
 
 const {
   state: tags,
@@ -26,7 +27,19 @@ async function handleDelete(id: number) {
   }
 }
 
+async function handleBatchDelete() {
+  try {
+    await batchDeleteTags(checkedRowKeys.value)
+    message.success(`已删除 ${checkedRowKeys.value.length} 条记录`)
+    checkedRowKeys.value = []
+    await reload()
+  } catch {
+    message.error('批量删除失败')
+  }
+}
+
 const columns = computed<DataTableColumns<Tag>>(() => [
+  { type: 'selection' },
   { title: 'ID', key: 'id', width: 60 },
   {
     title: '标签名称',
@@ -118,6 +131,16 @@ onMounted(() => {
     </header>
 
     <NCard class="list-card" title="标签列表">
+      <div class="toolbar" v-if="checkedRowKeys.length > 0">
+        <NPopconfirm @positive-click="handleBatchDelete">
+          <template #trigger>
+            <NButton type="error">
+              批量删除 ({{ checkedRowKeys.length }})
+            </NButton>
+          </template>
+          确定删除选中的 {{ checkedRowKeys.length }} 个标签？
+        </NPopconfirm>
+      </div>
       <NDataTable
         :columns="columns"
         :data="tags"
@@ -125,6 +148,8 @@ onMounted(() => {
         :bordered="false"
         striped
         :row-key="(row: Tag) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="(keys: number[]) => checkedRowKeys = keys"
       />
     </NCard>
   </div>
@@ -160,5 +185,13 @@ onMounted(() => {
 .list-card {
   background: #fffdf8;
   border: 1px solid #e8dcc8;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 </style>

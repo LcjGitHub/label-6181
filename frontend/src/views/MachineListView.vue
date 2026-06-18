@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useMessage, NButton, NTag, NSpace, NPopconfirm, NInput, NPagination } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
-import { deleteMachine, fetchMachines } from '@/api/machines'
+import { deleteMachine, batchDeleteMachines, fetchMachines } from '@/api/machines'
 import { fetchTags } from '@/api/tags'
 import type { Machine, OperationalFilter } from '@/types/machine'
 import type { Tag } from '@/types/tag'
@@ -19,6 +19,7 @@ const searchKeyword = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const checkedRowKeys = ref<number[]>([])
 
 const filterOptions = [
   { label: '全部', value: 'all' as const },
@@ -103,7 +104,19 @@ async function handleDelete(id: number) {
   }
 }
 
+async function handleBatchDelete() {
+  try {
+    await batchDeleteMachines(checkedRowKeys.value)
+    message.success(`已删除 ${checkedRowKeys.value.length} 条记录`)
+    checkedRowKeys.value = []
+    await reload()
+  } catch {
+    message.error('批量删除失败')
+  }
+}
+
 const columns = computed<DataTableColumns<Machine>>(() => [
+  { type: 'selection' },
   { title: 'ID', key: 'id', width: 60 },
   { title: '机型', key: 'model_type', ellipsis: { tooltip: true } },
   { title: '地点', key: 'location', ellipsis: { tooltip: true } },
@@ -250,6 +263,17 @@ onMounted(() => {
 
     <NCard class="list-card" title="机器列表">
       <div class="toolbar">
+        <NPopconfirm
+          v-if="checkedRowKeys.length > 0"
+          @positive-click="handleBatchDelete"
+        >
+          <template #trigger>
+            <NButton type="error">
+              批量删除 ({{ checkedRowKeys.length }})
+            </NButton>
+          </template>
+          确定删除选中的 {{ checkedRowKeys.length }} 台售货机？
+        </NPopconfirm>
         <span class="toolbar-label">运作状态筛选</span>
         <NRadioGroup
           :value="operationalFilter"
@@ -289,6 +313,8 @@ onMounted(() => {
         :bordered="false"
         striped
         :row-key="(row: Machine) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="(keys: number[]) => checkedRowKeys = keys"
       >
         <template #empty>
           <div v-if="!isLoading && hasActiveFilters" class="empty-state no-match">

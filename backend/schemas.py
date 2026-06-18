@@ -7,6 +7,12 @@ from pydantic import BaseModel, Field
 T = TypeVar("T")
 
 
+class BatchDelete(BaseModel):
+    """批量删除请求体。"""
+
+    ids: list[int] = Field(..., min_length=1, description="待删除记录编号列表")
+
+
 class Page(BaseModel, Generic[T]):
     """通用分页响应。"""
 

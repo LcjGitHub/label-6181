@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage, NButton, NTag, NSpace, NPopconfirm, NSelect } from 'naive-ui'
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
-import { deleteMaintenance, fetchMaintenances } from '@/api/maintenances'
+import { deleteMaintenance, batchDeleteMaintenances, fetchMaintenances } from '@/api/maintenances'
 import { fetchMachine, fetchAllMachines } from '@/api/machines'
 import type { Maintenance } from '@/types/maintenance'
 import type { Machine } from '@/types/machine'
@@ -27,6 +27,7 @@ const machineIdFromRoute = computed(() => {
 const hasMachineScope = computed(() => machineIdFromRoute.value !== undefined)
 
 const filterMachineId = ref<number | null>(null)
+const checkedRowKeys = ref<number[]>([])
 
 const { state: allMachines, isLoading: machinesLoading } = useAsyncState(
   () => fetchAllMachines(),
@@ -76,6 +77,17 @@ async function handleDelete(id: number) {
   }
 }
 
+async function handleBatchDelete() {
+  try {
+    await batchDeleteMaintenances(checkedRowKeys.value)
+    message.success(`已删除 ${checkedRowKeys.value.length} 条记录`)
+    checkedRowKeys.value = []
+    await reload()
+  } catch {
+    message.error('批量删除失败')
+  }
+}
+
 function goCreate() {
   const mid = effectiveMachineId.value
   if (mid !== undefined) {
@@ -99,6 +111,7 @@ function onFilterChange(value: number | null) {
 
 const columns = computed<DataTableColumns<Maintenance>>(() => {
   const cols: DataTableColumns<Maintenance> = [
+    { type: 'selection' },
     { title: 'ID', key: 'id', width: 60 },
   ]
   if (!hasMachineScope.value) {
@@ -208,6 +221,17 @@ onMounted(async () => {
 
     <NCard class="list-card" :title="hasMachineScope ? `售货机 #${machineIdFromRoute} 维保历史` : '维保记录列表'">
       <div v-if="!hasMachineScope" class="toolbar">
+        <NPopconfirm
+          v-if="checkedRowKeys.length > 0"
+          @positive-click="handleBatchDelete"
+        >
+          <template #trigger>
+            <NButton type="error">
+              批量删除 ({{ checkedRowKeys.length }})
+            </NButton>
+          </template>
+          确定删除选中的 {{ checkedRowKeys.length }} 条维保记录？
+        </NPopconfirm>
         <span class="toolbar-label">按售货机筛选</span>
         <NSelect
           :value="filterMachineId"
@@ -227,6 +251,8 @@ onMounted(async () => {
         :bordered="false"
         striped
         :row-key="(row: Maintenance) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="(keys: number[]) => checkedRowKeys = keys"
       />
     </NCard>
   </div>

@@ -57,3 +57,7 @@ export async function updateMaintenance(
 export async function deleteMaintenance(id: number): Promise<void> {
   await http.delete(`/maintenances/${id}`)
 }
+
+export async function batchDeleteMaintenances(ids: number[]): Promise<void> {
+  await http.post('/maintenances/batch-delete', { ids })
+}

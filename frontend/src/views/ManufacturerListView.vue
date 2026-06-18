@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useMessage, NButton, NSpace, NPopconfirm, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
-import { deleteManufacturer, fetchManufacturers } from '@/api/manufacturers'
+import { deleteManufacturer, batchDeleteManufacturers, fetchManufacturers } from '@/api/manufacturers'
 import type { Manufacturer } from '@/types/manufacturer'
 
 const router = useRouter()
@@ -12,7 +12,7 @@ const message = useMessage()
 
 const countryFilter = ref('')
 const allCountries = ref<string[]>([])
-
+const checkedRowKeys = ref<number[]>([])
 const {
   state: manufacturers,
   isLoading,
@@ -57,7 +57,20 @@ async function handleDelete(id: number) {
   }
 }
 
+async function handleBatchDelete() {
+  try {
+    await batchDeleteManufacturers(checkedRowKeys.value)
+    message.success(`已删除 ${checkedRowKeys.value.length} 条记录`)
+    checkedRowKeys.value = []
+    await loadCountries()
+    await reload()
+  } catch {
+    message.error('批量删除失败')
+  }
+}
+
 const columns = computed<DataTableColumns<Manufacturer>>(() => [
+  { type: 'selection' },
   { title: 'ID', key: 'id', width: 60 },
   { title: '品牌名称', key: 'brand_name', ellipsis: { tooltip: true } },
   {
@@ -127,6 +140,17 @@ onMounted(async () => {
 
     <NCard class="list-card" title="厂商列表">
       <div class="toolbar">
+        <NPopconfirm
+          v-if="checkedRowKeys.length > 0"
+          @positive-click="handleBatchDelete"
+        >
+          <template #trigger>
+            <NButton type="error">
+              批量删除 ({{ checkedRowKeys.length }})
+            </NButton>
+          </template>
+          确定删除选中的 {{ checkedRowKeys.length }} 个厂商？
+        </NPopconfirm>
         <span class="toolbar-label">按国家筛选</span>
         <NRadioGroup
           :value="countryFilter"
@@ -148,6 +172,8 @@ onMounted(async () => {
         :bordered="false"
         striped
         :row-key="(row: Manufacturer) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="(keys: number[]) => checkedRowKeys = keys"
       />
     </NCard>
   </div>

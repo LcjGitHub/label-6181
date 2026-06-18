@@ -49,3 +49,7 @@ export async function updateTag(id: number, payload: TagForm): Promise<Tag> {
 export async function deleteTag(id: number): Promise<void> {
   await http.delete(`/tags/${id}`)
 }
+
+export async function batchDeleteTags(ids: number[]): Promise<void> {
+  await http.post('/tags/batch-delete', { ids })
+}

@@ -38,3 +38,7 @@ export async function updateManufacturer(
 export async function deleteManufacturer(id: number): Promise<void> {
   await http.delete(`/manufacturers/${id}`)
 }
+
+export async function batchDeleteManufacturers(ids: number[]): Promise<void> {
+  await http.post('/manufacturers/batch-delete', { ids })
+}

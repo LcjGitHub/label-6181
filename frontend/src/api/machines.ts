@@ -91,6 +91,10 @@ export async function deleteMachine(id: number): Promise<void> {
   await http.delete(`/machines/${id}`)
 }
 
+export async function batchDeleteMachines(ids: number[]): Promise<void> {
+  await http.post('/machines/batch-delete', { ids })
+}
+
 /**
  * 为售货机设置标签（专用接口）
  * @param machineId - 售货机 ID

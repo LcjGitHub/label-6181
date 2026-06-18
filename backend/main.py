@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
 from schemas import (
-    Page,
+    Page, BatchDelete,
     TagCreate, TagOut, TagUpdate,
     MachineCreate, MachineOut, MachineUpdate, MachineTagSet,
     ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
@@ -202,6 +202,25 @@ def delete_tag(tag_id: int) -> None:
     conn.close()
 
 
+@app.post("/api/tags/batch-delete", status_code=204)
+def batch_delete_tags(payload: BatchDelete) -> None:
+  """批量删除标签。"""
+  conn = get_connection()
+  try:
+    placeholders = ",".join("?" for _ in payload.ids)
+    existing_rows = conn.execute(
+        f"SELECT id FROM tags WHERE id IN ({placeholders})", payload.ids
+    ).fetchall()
+    existing_ids = {row["id"] for row in existing_rows}
+    missing = set(payload.ids) - existing_ids
+    if missing:
+      raise HTTPException(status_code=404, detail=f"以下标签不存在: {sorted(missing)}")
+    conn.execute(f"DELETE FROM tags WHERE id IN ({placeholders})", payload.ids)
+    conn.commit()
+  finally:
+    conn.close()
+
+
 @app.get("/api/machines", response_model=Page[MachineOut])
 def list_machines(
     operational: Literal["all", "true", "false"] = Query(
@@ -376,6 +395,25 @@ def delete_machine(machine_id: int) -> None:
     conn.close()
 
 
+@app.post("/api/machines/batch-delete", status_code=204)
+def batch_delete_machines(payload: BatchDelete) -> None:
+  """批量删除售货机。"""
+  conn = get_connection()
+  try:
+    placeholders = ",".join("?" for _ in payload.ids)
+    existing_rows = conn.execute(
+        f"SELECT id FROM machines WHERE id IN ({placeholders})", payload.ids
+    ).fetchall()
+    existing_ids = {row["id"] for row in existing_rows}
+    missing = set(payload.ids) - existing_ids
+    if missing:
+      raise HTTPException(status_code=404, detail=f"以下售货机不存在: {sorted(missing)}")
+    conn.execute(f"DELETE FROM machines WHERE id IN ({placeholders})", payload.ids)
+    conn.commit()
+  finally:
+    conn.close()
+
+
 def row_to_manufacturer(row) -> ManufacturerOut:
   return ManufacturerOut(
       id=row["id"],
@@ -488,6 +526,25 @@ def delete_manufacturer(manufacturer_id: int) -> None:
     conn.commit()
     if cursor.rowcount == 0:
       raise HTTPException(status_code=404, detail="厂商不存在")
+  finally:
+    conn.close()
+
+
+@app.post("/api/manufacturers/batch-delete", status_code=204)
+def batch_delete_manufacturers(payload: BatchDelete) -> None:
+  """批量删除厂商。"""
+  conn = get_connection()
+  try:
+    placeholders = ",".join("?" for _ in payload.ids)
+    existing_rows = conn.execute(
+        f"SELECT id FROM manufacturers WHERE id IN ({placeholders})", payload.ids
+    ).fetchall()
+    existing_ids = {row["id"] for row in existing_rows}
+    missing = set(payload.ids) - existing_ids
+    if missing:
+      raise HTTPException(status_code=404, detail=f"以下厂商不存在: {sorted(missing)}")
+    conn.execute(f"DELETE FROM manufacturers WHERE id IN ({placeholders})", payload.ids)
+    conn.commit()
   finally:
     conn.close()
 
@@ -623,6 +680,25 @@ def delete_maintenance(maintenance_id: int) -> None:
     conn.commit()
     if cursor.rowcount == 0:
       raise HTTPException(status_code=404, detail="维保记录不存在")
+  finally:
+    conn.close()
+
+
+@app.post("/api/maintenances/batch-delete", status_code=204)
+def batch_delete_maintenances(payload: BatchDelete) -> None:
+  """批量删除维保记录。"""
+  conn = get_connection()
+  try:
+    placeholders = ",".join("?" for _ in payload.ids)
+    existing_rows = conn.execute(
+        f"SELECT id FROM maintenances WHERE id IN ({placeholders})", payload.ids
+    ).fetchall()
+    existing_ids = {row["id"] for row in existing_rows}
+    missing = set(payload.ids) - existing_ids
+    if missing:
+      raise HTTPException(status_code=404, detail=f"以下维保记录不存在: {sorted(missing)}")
+    conn.execute(f"DELETE FROM maintenances WHERE id IN ({placeholders})", payload.ids)
+    conn.commit()
   finally:
     conn.close()
 

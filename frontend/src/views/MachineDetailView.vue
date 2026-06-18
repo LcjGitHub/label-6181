@@ -22,7 +22,11 @@ const machine = ref<Machine | null>(null)
 const loading = ref(false)
 
 async function loadMachine() {
-  if (machineId.value === null) return
+  if (machineId.value === null) {
+    message.error('无效的售货机编号')
+    router.push('/')
+    return
+  }
   loading.value = true
   try {
     machine.value = await fetchMachine(machineId.value)

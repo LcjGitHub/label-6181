@@ -78,6 +78,7 @@ onMounted(() => {
           <NDescriptionsItem label="机型">{{ machine.model_type }}</NDescriptionsItem>
           <NDescriptionsItem label="地点">{{ machine.location }}</NDescriptionsItem>
           <NDescriptionsItem label="售卖品类">{{ machine.categories }}</NDescriptionsItem>
+          <NDescriptionsItem label="制造年份">{{ machine.manufacturing_year || '未填写' }}</NDescriptionsItem>
           <NDescriptionsItem label="是否运作">
             <NTag
               :type="machine.is_operational ? 'success' : 'default'"

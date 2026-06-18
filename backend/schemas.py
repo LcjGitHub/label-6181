@@ -47,6 +47,7 @@ class MachineBase(BaseModel):
     categories: str = Field(..., min_length=1, description="售卖品类")
     is_operational: bool = Field(True, description="是否运作")
     photo_description: str = Field("", description="照片描述")
+    manufacturing_year: int = Field(..., ge=1950, le=2100, description="制造年份")
 
 
 class MachineTagSet(BaseModel):

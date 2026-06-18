@@ -9,6 +9,7 @@ SEED_DATA = [
         "categories": "罐装饮料、咖啡",
         "is_operational": 1,
         "photo_description": "经典红色机身，玻璃前门可看到整排可乐罐",
+        "manufacturing_year": 1972,
     },
     {
         "model_type": "Fuji Electric FVR-30",
@@ -16,6 +17,7 @@ SEED_DATA = [
         "categories": "热饮、方便面",
         "is_operational": 1,
         "photo_description": "米白色外壳，顶部有富士电机铭牌，按键式选货",
+        "manufacturing_year": 1980,
     },
     {
         "model_type": "Sanden SD-40",
@@ -23,6 +25,7 @@ SEED_DATA = [
         "categories": "茶饮、矿泉水",
         "is_operational": 0,
         "photo_description": "机身褪色，玻璃门有裂纹，内部灯管已熄灭",
+        "manufacturing_year": 1985,
     },
     {
         "model_type": "Crane National 147",
@@ -30,6 +33,7 @@ SEED_DATA = [
         "categories": "零食、口香糖",
         "is_operational": 1,
         "photo_description": "螺旋式出货口，侧面贴有昭和风格广告画",
+        "manufacturing_year": 1968,
     },
     {
         "model_type": "Sanyo VM-2000",
@@ -37,6 +41,7 @@ SEED_DATA = [
         "categories": "果汁、运动饮料",
         "is_operational": 0,
         "photo_description": "蓝白配色，投币口生锈，显示屏数字残缺",
+        "manufacturing_year": 1991,
     },
 ]
 
@@ -169,8 +174,8 @@ def seed_if_empty() -> None:
         if count == 0:
             conn.executemany(
                 """
-                INSERT INTO machines (model_type, location, categories, is_operational, photo_description)
-                VALUES (:model_type, :location, :categories, :is_operational, :photo_description)
+                INSERT INTO machines (model_type, location, categories, is_operational, photo_description, manufacturing_year)
+                VALUES (:model_type, :location, :categories, :is_operational, :photo_description, :manufacturing_year)
                 """,
                 SEED_DATA,
             )

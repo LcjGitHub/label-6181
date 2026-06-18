@@ -80,6 +80,7 @@ def row_to_machine(row, conn=None) -> MachineOut:
       categories=row["categories"],
       is_operational=bool(row["is_operational"]),
       photo_description=row["photo_description"],
+      manufacturing_year=row["manufacturing_year"],
       tags=tags,
   )
 
@@ -279,8 +280,8 @@ def create_machine(payload: MachineCreate) -> MachineOut:
   try:
     cursor = conn.execute(
         """
-        INSERT INTO machines (model_type, location, categories, is_operational, photo_description)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO machines (model_type, location, categories, is_operational, photo_description, manufacturing_year)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
             payload.model_type,
@@ -288,6 +289,7 @@ def create_machine(payload: MachineCreate) -> MachineOut:
             payload.categories,
             int(payload.is_operational),
             payload.photo_description,
+            payload.manufacturing_year,
         ),
     )
     machine_id = cursor.lastrowid
@@ -316,7 +318,7 @@ def update_machine(machine_id: int, payload: MachineUpdate) -> MachineOut:
         """
         UPDATE machines
         SET model_type = ?, location = ?, categories = ?,
-            is_operational = ?, photo_description = ?
+            is_operational = ?, photo_description = ?, manufacturing_year = ?
         WHERE id = ?
         """,
         (
@@ -325,6 +327,7 @@ def update_machine(machine_id: int, payload: MachineUpdate) -> MachineOut:
             payload.categories,
             int(payload.is_operational),
             payload.photo_description,
+            payload.manufacturing_year,
             machine_id,
         ),
     )

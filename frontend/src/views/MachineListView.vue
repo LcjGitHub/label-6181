@@ -108,6 +108,7 @@ const columns = computed<DataTableColumns<Machine>>(() => [
   { title: '机型', key: 'model_type', ellipsis: { tooltip: true } },
   { title: '地点', key: 'location', ellipsis: { tooltip: true } },
   { title: '售卖品类', key: 'categories', ellipsis: { tooltip: true } },
+  { title: '制造年份', key: 'manufacturing_year', width: 100 },
   {
     title: '是否运作',
     key: 'is_operational',

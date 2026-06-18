@@ -11,6 +11,7 @@ export interface Machine {
   categories: string
   is_operational: boolean
   photo_description: string
+  manufacturing_year: number
   tags: Tag[]
 }
 
@@ -21,6 +22,7 @@ export interface MachineForm {
   categories: string
   is_operational: boolean
   photo_description: string
+  manufacturing_year: number | null
   tag_ids: number[]
 }
 

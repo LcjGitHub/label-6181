@@ -33,6 +33,7 @@ const formModel = reactive<MachineForm>({
   categories: '',
   is_operational: true,
   photo_description: '',
+  manufacturing_year: null,
   tag_ids: [],
 })
 
@@ -48,6 +49,10 @@ const rules: FormRules = {
   model_type: [{ required: true, message: '请输入机型', trigger: 'blur' }],
   location: [{ required: true, message: '请输入地点', trigger: 'blur' }],
   categories: [{ required: true, message: '请输入售卖品类', trigger: 'blur' }],
+  manufacturing_year: [
+    { required: true, type: 'number', message: '请输入制造年份', trigger: ['blur', 'change'] },
+    { type: 'number', validator: (_rule, value) => { if (value !== null && value !== undefined && (value < 1950 || value > 2100)) return new Error('年份范围为 1950~2100'); return true }, trigger: ['blur', 'change'] },
+  ],
 }
 
 function renderTagLabel(option: SelectOption) {
@@ -94,6 +99,7 @@ async function loadMachine() {
       categories: data.categories,
       is_operational: data.is_operational,
       photo_description: data.photo_description,
+      manufacturing_year: data.manufacturing_year,
       tag_ids: data.tags ? data.tags.map((t) => t.id) : [],
     })
   } catch {
@@ -167,6 +173,17 @@ onMounted(() => {
             <NInput
               v-model:value="formModel.categories"
               placeholder="例如 罐装饮料、咖啡"
+            />
+          </NFormItem>
+
+          <NFormItem label="制造年份" path="manufacturing_year">
+            <NInputNumber
+              v-model:value="formModel.manufacturing_year"
+              :min="1950"
+              :max="2100"
+              placeholder="例如 1985"
+              style="width: 100%"
+              clearable
             />
           </NFormItem>
 

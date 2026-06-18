@@ -31,7 +31,8 @@ def init_db() -> None:
                 location TEXT NOT NULL,
                 categories TEXT NOT NULL,
                 is_operational INTEGER NOT NULL DEFAULT 1,
-                photo_description TEXT NOT NULL DEFAULT ''
+                photo_description TEXT NOT NULL DEFAULT '',
+                manufacturing_year INTEGER NOT NULL DEFAULT 0
             )
             """
         )

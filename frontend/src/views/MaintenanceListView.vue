@@ -5,7 +5,7 @@ import { useMessage, NButton, NTag, NSpace, NPopconfirm, NSelect } from 'naive-u
 import type { DataTableColumns, SelectOption } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { deleteMaintenance, fetchMaintenances } from '@/api/maintenances'
-import { fetchMachine, fetchMachines } from '@/api/machines'
+import { fetchMachine, fetchAllMachines } from '@/api/machines'
 import type { Maintenance } from '@/types/maintenance'
 import type { Machine } from '@/types/machine'
 
@@ -29,10 +29,7 @@ const hasMachineScope = computed(() => machineIdFromRoute.value !== undefined)
 const filterMachineId = ref<number | null>(null)
 
 const { state: allMachines, isLoading: machinesLoading } = useAsyncState(
-  async () => {
-    const result = await fetchMachines('all', null, '', 1, 1000)
-    return result.items
-  },
+  () => fetchAllMachines(),
   [] as Machine[],
   { immediate: true },
 )

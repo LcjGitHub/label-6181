@@ -7,7 +7,7 @@ import { useAsyncState } from '@vueuse/core'
 import { fetchInspections } from '@/api/inspections'
 import type { Inspection, InspectionResultFilter } from '@/types/inspection'
 import type { Machine } from '@/types/machine'
-import { fetchMachines } from '@/api/machines'
+import { fetchAllMachines } from '@/api/machines'
 
 const router = useRouter()
 
@@ -20,10 +20,7 @@ const filterOptions = [
 ]
 
 const { state: machines, isLoading: machinesLoading } = useAsyncState(
-  async () => {
-    const result = await fetchMachines('all', null, '', 1, 1000)
-    return result.items
-  },
+  () => fetchAllMachines(),
   [] as Machine[],
   { immediate: true },
 )

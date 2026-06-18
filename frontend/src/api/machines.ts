@@ -34,6 +34,25 @@ export async function fetchMachines(
 }
 
 /**
+ * 循环分页拉取全部售货机（用于下拉选项等场景）
+ * 每次按最大允许 pageSize=100 拉取，直到取完为止
+ */
+export async function fetchAllMachines(): Promise<Machine[]> {
+  const all: Machine[] = []
+  let currentPage = 1
+  const pageSize = 100
+  while (true) {
+    const result = await fetchMachines('all', null, '', currentPage, pageSize)
+    all.push(...result.items)
+    if (all.length >= result.total || result.items.length < pageSize) {
+      break
+    }
+    currentPage += 1
+  }
+  return all
+}
+
+/**
  * 获取单台售货机
  * @param id - 售货机 ID
  */

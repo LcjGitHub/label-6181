@@ -5,7 +5,7 @@ import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { createInspection } from '@/api/inspections'
-import { fetchMachines } from '@/api/machines'
+import { fetchAllMachines } from '@/api/machines'
 import type { InspectionForm } from '@/types/inspection'
 import type { Machine } from '@/types/machine'
 
@@ -25,10 +25,7 @@ const queryMachineId = computed(() => {
 })
 
 const { state: machines, isLoading: machinesLoading } = useAsyncState(
-  async () => {
-    const result = await fetchMachines('all', null, '', 1, 1000)
-    return result.items
-  },
+  () => fetchAllMachines(),
   [] as Machine[],
   { immediate: true },
 )

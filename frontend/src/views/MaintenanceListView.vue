@@ -220,7 +220,7 @@ onMounted(async () => {
     </header>
 
     <NCard class="list-card" :title="hasMachineScope ? `售货机 #${machineIdFromRoute} 维保历史` : '维保记录列表'">
-      <div v-if="!hasMachineScope" class="toolbar">
+      <div class="toolbar" v-if="!hasMachineScope || checkedRowKeys.length > 0">
         <NPopconfirm
           v-if="checkedRowKeys.length > 0"
           @positive-click="handleBatchDelete"
@@ -232,16 +232,18 @@ onMounted(async () => {
           </template>
           确定删除选中的 {{ checkedRowKeys.length }} 条维保记录？
         </NPopconfirm>
-        <span class="toolbar-label">按售货机筛选</span>
-        <NSelect
-          :value="filterMachineId"
-          :options="machineFilterOptions"
-          :loading="machinesLoading"
-          placeholder="全部售货机"
-          clearable
-          style="width: 240px"
-          @update:value="onFilterChange"
-        />
+        <template v-if="!hasMachineScope">
+          <span class="toolbar-label">按售货机筛选</span>
+          <NSelect
+            :value="filterMachineId"
+            :options="machineFilterOptions"
+            :loading="machinesLoading"
+            placeholder="全部售货机"
+            clearable
+            style="width: 240px"
+            @update:value="onFilterChange"
+          />
+        </template>
       </div>
 
       <NDataTable

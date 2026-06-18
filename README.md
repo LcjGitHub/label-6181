@@ -48,12 +48,14 @@ cd frontend && npm install && npm run dev
 - 机器列表，支持按「全部 / 运作中 / 已停运」筛选
 - 机器列表，支持按机型、地点、售卖品类、制造年份、照片描述的关键词模糊搜索，可与运作状态、标签筛选组合使用
 - 新增、编辑、删除售货机记录
+- 批量删除售货机（列表多选后统一删除，二次确认）
 - 字段：机型、地点、售卖品类、制造年份、是否运作、照片描述
 
 ### 厂商品牌
 
 - 厂商列表，支持按国家筛选（筛选项从全部数据提取，筛选后不会消失）
 - 新增、编辑、删除厂商记录
+- 批量删除厂商（列表多选后统一删除，二次确认）
 - 字段：品牌名称、所属国家、成立年份、简介
 
 ### 维保记录
@@ -61,6 +63,7 @@ cd frontend && npm install && npm run dev
 - 从售货机列表点击「维保」进入该机的维保历史；也可通过全局维保页面查看所有记录
 - 全局维保列表页支持按售货机编号筛选
 - 新增、编辑、删除维保记录
+- 批量删除维保记录（列表多选后统一删除，二次确认；单机历史视图与全局视图均支持）
 - 字段：关联售货机编号、维保日期、维保类型、经办人、维保说明
 
 ### 巡检打卡
@@ -74,6 +77,7 @@ cd frontend && npm install && npm run dev
 
 - 标签管理页：维护标签名称与颜色标识（12 色预设 + 自定义颜色选择器），支持增删改查
 - 标签与售货机多对多关联：一台售货机可绑定多个标签，标签可复用
+- 批量删除标签（列表多选后统一删除，二次确认）
 - 售货机表单页：多选标签控件，选项带色块标识，空状态提示跳转标签管理
 - 售货机列表页：新增「按标签筛选」下拉，操作与运作状态筛选联动；列表新增「标签」列展示彩色标签
 - 售货机列表与售货机详情加载时：标签接口与售货机接口**并行请求**，分别捕获异常，互不阻塞
@@ -125,6 +129,7 @@ cd frontend && npm install && npm run dev
 | PUT | `/api/machines/{id}` | 更新（请求体中 `tag_ids` 可选，省略时不修改现有标签） |
 | PUT | `/api/machines/{id}/tags` | **为售货机设置标签（专用接口）**，传入 `{ tag_ids: [1,2,3] }`，空数组表示清除 |
 | DELETE | `/api/machines/{id}` | 删除 |
+| POST | `/api/machines/batch-delete` | 批量删除，接收 `{ ids: [1,2,3] }`，校验全部编号存在后删除，返回无内容 |
 
 售货机字段说明：
 
@@ -148,6 +153,7 @@ cd frontend && npm install && npm run dev
 | POST | `/api/tags` | 新增标签（`name` 唯一） |
 | PUT | `/api/tags/{id}` | 更新标签（`name` 唯一校验） |
 | DELETE | `/api/tags/{id}` | 删除标签（售货机上的关联会被级联清除） |
+| POST | `/api/tags/batch-delete` | 批量删除，接收 `{ ids: [1,2,3] }`，校验全部编号存在后删除，返回无内容 |
 
 标签字段说明：
 
@@ -165,6 +171,7 @@ cd frontend && npm install && npm run dev
 | POST | `/api/manufacturers` | 新增 |
 | PUT | `/api/manufacturers/{id}` | 更新 |
 | DELETE | `/api/manufacturers/{id}` | 删除 |
+| POST | `/api/manufacturers/batch-delete` | 批量删除，接收 `{ ids: [1,2,3] }`，校验全部编号存在后删除，返回无内容 |
 
 厂商字段说明：
 
@@ -184,6 +191,7 @@ cd frontend && npm install && npm run dev
 | POST | `/api/maintenances` | 新增 |
 | PUT | `/api/maintenances/{id}` | 更新 |
 | DELETE | `/api/maintenances/{id}` | 删除 |
+| POST | `/api/maintenances/batch-delete` | 批量删除，接收 `{ ids: [1,2,3] }`，校验全部编号存在后删除，返回无内容 |
 
 维保记录字段说明：
 

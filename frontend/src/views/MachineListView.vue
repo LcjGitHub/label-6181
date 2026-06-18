@@ -166,6 +166,15 @@ const columns = computed<DataTableColumns<Machine>>(() => [
           {
             size: 'small',
             tertiary: true,
+            onClick: () => router.push(`/machines/${row.id}`),
+          },
+          { default: () => '查看' },
+        ),
+        h(
+          NButton,
+          {
+            size: 'small',
+            tertiary: true,
             type: 'warning',
             onClick: () => router.push({
               path: '/inspections/new',

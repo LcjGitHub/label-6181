@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/StatisticsView.vue'),
     },
     {
+      path: '/machines/:id',
+      name: 'machine-detail',
+      component: () => import('@/views/MachineDetailView.vue'),
+    },
+    {
       path: '/machines/:id/edit',
       name: 'machine-edit',
       component: () => import('@/views/MachineFormView.vue'),

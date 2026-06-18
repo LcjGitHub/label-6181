@@ -6,14 +6,26 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import MachineCreate, MachineOut, MachineUpdate, ManufacturerCreate, ManufacturerOut, ManufacturerUpdate
+from schemas import (
+    MachineCreate, MachineOut, MachineUpdate,
+    ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
+    MaintenanceCreate, MaintenanceOut, MaintenanceUpdate,
+)
 from seed import seed_if_empty
 
 app = FastAPI(title="老式自动售货机机型图鉴", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3101", "http://127.0.0.1:3101"],
+    allow_origins=[
+        "http://localhost:3101", "http://127.0.0.1:3101",
+        "http://localhost:3102", "http://127.0.0.1:3102",
+        "http://localhost:3103", "http://127.0.0.1:3103",
+        "http://localhost:3104", "http://127.0.0.1:3104",
+        "http://localhost:3105", "http://127.0.0.1:3105",
+        "http://localhost:3106", "http://127.0.0.1:3106",
+        "http://localhost:3107", "http://127.0.0.1:3107",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -273,5 +285,140 @@ def delete_manufacturer(manufacturer_id: int) -> None:
     conn.commit()
     if cursor.rowcount == 0:
       raise HTTPException(status_code=404, detail="厂商不存在")
+  finally:
+    conn.close()
+
+
+def row_to_maintenance(row) -> MaintenanceOut:
+  """
+   * 将数据库行转为维保记录响应模型。
+   * @param {sqlite3.Row} row
+   * @returns {MaintenanceOut}
+  """
+  return MaintenanceOut(
+      id=row["id"],
+      machine_id=row["machine_id"],
+      maintenance_date=row["maintenance_date"],
+      maintenance_type=row["maintenance_type"],
+      handler=row["handler"],
+      description=row["description"],
+  )
+
+
+def _machine_exists(conn, machine_id: int) -> bool:
+  """检查售货机是否存在。"""
+  row = conn.execute("SELECT id FROM machines WHERE id = ?", (machine_id,)).fetchone()
+  return row is not None
+
+
+@app.get("/api/maintenances", response_model=list[MaintenanceOut])
+def list_maintenances(
+    machine_id: int | None = Query(None, description="按售货机编号筛选，None 表示全部"),
+) -> list[MaintenanceOut]:
+  """获取维保记录列表，支持按售货机编号筛选。"""
+  conn = get_connection()
+  try:
+    sql = "SELECT * FROM maintenances"
+    params: list = []
+    if machine_id is not None:
+      sql += " WHERE machine_id = ?"
+      params.append(machine_id)
+    sql += " ORDER BY maintenance_date DESC, id DESC"
+    rows = conn.execute(sql, params).fetchall()
+    return [row_to_maintenance(row) for row in rows]
+  finally:
+    conn.close()
+
+
+@app.get("/api/maintenances/{maintenance_id}", response_model=MaintenanceOut)
+def get_maintenance(maintenance_id: int) -> MaintenanceOut:
+  """获取单条维保记录。"""
+  conn = get_connection()
+  try:
+    row = conn.execute(
+        "SELECT * FROM maintenances WHERE id = ?", (maintenance_id,)
+    ).fetchone()
+    if row is None:
+      raise HTTPException(status_code=404, detail="维保记录不存在")
+    return row_to_maintenance(row)
+  finally:
+    conn.close()
+
+
+@app.post("/api/maintenances", response_model=MaintenanceOut, status_code=201)
+def create_maintenance(payload: MaintenanceCreate) -> MaintenanceOut:
+  """新增维保记录。"""
+  conn = get_connection()
+  try:
+    if not _machine_exists(conn, payload.machine_id):
+      raise HTTPException(status_code=404, detail="关联的售货机不存在")
+    cursor = conn.execute(
+        """
+        INSERT INTO maintenances (machine_id, maintenance_date, maintenance_type, handler, description)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            payload.machine_id,
+            payload.maintenance_date,
+            payload.maintenance_type,
+            payload.handler,
+            payload.description,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM maintenances WHERE id = ?", (cursor.lastrowid,)
+    ).fetchone()
+    return row_to_maintenance(row)
+  finally:
+    conn.close()
+
+
+@app.put("/api/maintenances/{maintenance_id}", response_model=MaintenanceOut)
+def update_maintenance(maintenance_id: int, payload: MaintenanceUpdate) -> MaintenanceOut:
+  """更新维保记录。"""
+  conn = get_connection()
+  try:
+    existing = conn.execute(
+        "SELECT id FROM maintenances WHERE id = ?", (maintenance_id,)
+    ).fetchone()
+    if existing is None:
+      raise HTTPException(status_code=404, detail="维保记录不存在")
+    if not _machine_exists(conn, payload.machine_id):
+      raise HTTPException(status_code=404, detail="关联的售货机不存在")
+    conn.execute(
+        """
+        UPDATE maintenances
+        SET machine_id = ?, maintenance_date = ?, maintenance_type = ?,
+            handler = ?, description = ?
+        WHERE id = ?
+        """,
+        (
+            payload.machine_id,
+            payload.maintenance_date,
+            payload.maintenance_type,
+            payload.handler,
+            payload.description,
+            maintenance_id,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM maintenances WHERE id = ?", (maintenance_id,)
+    ).fetchone()
+    return row_to_maintenance(row)
+  finally:
+    conn.close()
+
+
+@app.delete("/api/maintenances/{maintenance_id}", status_code=204)
+def delete_maintenance(maintenance_id: int) -> None:
+  """删除维保记录。"""
+  conn = get_connection()
+  try:
+    cursor = conn.execute("DELETE FROM maintenances WHERE id = ?", (maintenance_id,))
+    conn.commit()
+    if cursor.rowcount == 0:
+      raise HTTPException(status_code=404, detail="维保记录不存在")
   finally:
     conn.close()

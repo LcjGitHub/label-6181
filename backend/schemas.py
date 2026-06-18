@@ -52,3 +52,29 @@ class ManufacturerOut(ManufacturerBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class MaintenanceBase(BaseModel):
+    """维保记录公共字段。"""
+
+    machine_id: int = Field(..., description="关联售货机编号")
+    maintenance_date: str = Field(..., min_length=1, description="维保日期，格式 YYYY-MM-DD")
+    maintenance_type: str = Field(..., min_length=1, description="维保类型")
+    handler: str = Field(..., min_length=1, description="经办人")
+    description: str = Field("", description="维保说明")
+
+
+class MaintenanceCreate(MaintenanceBase):
+    """创建维保记录。"""
+
+
+class MaintenanceUpdate(MaintenanceBase):
+    """更新维保记录。"""
+
+
+class MaintenanceOut(MaintenanceBase):
+    """维保记录响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}

@@ -46,6 +46,19 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS maintenances (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                machine_id INTEGER NOT NULL,
+                maintenance_date TEXT NOT NULL,
+                maintenance_type TEXT NOT NULL,
+                handler TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE
+            )
+            """
+        )
         conn.commit()
     finally:
         conn.close()

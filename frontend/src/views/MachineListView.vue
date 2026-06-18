@@ -70,9 +70,19 @@ const columns = computed<DataTableColumns<Machine>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 160,
+    width: 240,
     render(row) {
       return h(NSpace, { size: 'small' }, () => [
+        h(
+          NButton,
+          {
+            size: 'small',
+            tertiary: true,
+            type: 'info',
+            onClick: () => router.push(`/machines/${row.id}/maintenances`),
+          },
+          { default: () => '维保' },
+        ),
         h(
           NButton,
           {

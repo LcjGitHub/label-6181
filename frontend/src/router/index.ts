@@ -19,6 +19,26 @@ const router = createRouter({
       component: () => import('@/views/MachineFormView.vue'),
     },
     {
+      path: '/machines/:machineId/maintenances',
+      name: 'machine-maintenance-list',
+      component: () => import('@/views/MaintenanceListView.vue'),
+    },
+    {
+      path: '/maintenances',
+      name: 'maintenance-list',
+      component: () => import('@/views/MaintenanceListView.vue'),
+    },
+    {
+      path: '/maintenances/new',
+      name: 'maintenance-new',
+      component: () => import('@/views/MaintenanceFormView.vue'),
+    },
+    {
+      path: '/maintenances/:id/edit',
+      name: 'maintenance-edit',
+      component: () => import('@/views/MaintenanceFormView.vue'),
+    },
+    {
       path: '/manufacturers',
       name: 'manufacturer-list',
       component: () => import('@/views/ManufacturerListView.vue'),

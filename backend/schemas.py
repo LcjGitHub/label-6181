@@ -5,6 +5,29 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class TagBase(BaseModel):
+    """标签公共字段。"""
+
+    name: str = Field(..., min_length=1, max_length=50, description="标签名称")
+    color: str = Field("#18a058", min_length=4, max_length=20, description="颜色标识")
+
+
+class TagCreate(TagBase):
+    """创建标签。"""
+
+
+class TagUpdate(TagBase):
+    """更新标签。"""
+
+
+class TagOut(TagBase):
+    """标签响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}
+
+
 class MachineBase(BaseModel):
     """售货机公共字段。"""
 
@@ -18,15 +41,20 @@ class MachineBase(BaseModel):
 class MachineCreate(MachineBase):
     """创建售货机。"""
 
+    tag_ids: list[int] = Field([], description="关联标签 ID 列表")
+
 
 class MachineUpdate(MachineBase):
     """更新售货机。"""
+
+    tag_ids: list[int] = Field([], description="关联标签 ID 列表")
 
 
 class MachineOut(MachineBase):
     """售货机响应。"""
 
     id: int
+    tags: list[TagOut] = Field([], description="关联标签列表")
 
     model_config = {"from_attributes": True}
 

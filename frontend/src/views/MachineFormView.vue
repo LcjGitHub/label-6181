@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import type { FormInst, FormRules } from 'naive-ui'
+import type { FormInst, FormRules, SelectOption } from 'naive-ui'
 import { createMachine, fetchMachine, updateMachine } from '@/api/machines'
+import { fetchTags } from '@/api/tags'
 import type { MachineForm } from '@/types/machine'
+import type { Tag } from '@/types/tag'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +14,7 @@ const message = useMessage()
 const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
 const loading = ref(false)
+const allTags = ref<Tag[]>([])
 
 const machineId = computed(() => {
   const raw = route.params.id
@@ -30,12 +33,49 @@ const formModel = reactive<MachineForm>({
   categories: '',
   is_operational: true,
   photo_description: '',
+  tag_ids: [],
 })
+
+const tagOptions = computed<SelectOption[]>(() =>
+  allTags.value.map((tag) => ({
+    label: tag.name,
+    value: tag.id,
+    tag,
+  })),
+)
 
 const rules: FormRules = {
   model_type: [{ required: true, message: '请输入机型', trigger: 'blur' }],
   location: [{ required: true, message: '请输入地点', trigger: 'blur' }],
   categories: [{ required: true, message: '请输入售卖品类', trigger: 'blur' }],
+}
+
+function renderTagLabel(option: SelectOption) {
+  const tag = option.tag as Tag | undefined
+  if (!tag) {
+    return option.label as string
+  }
+  return h(
+    'span',
+    { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+    [
+      h('span', {
+        style: {
+          display: 'inline-block',
+          width: '14px',
+          height: '14px',
+          borderRadius: '3px',
+          backgroundColor: tag.color,
+          verticalAlign: 'middle',
+        },
+      }),
+      tag.name,
+    ],
+  )
+}
+
+async function loadTags() {
+  allTags.value = await fetchTags()
 }
 
 /** 编辑模式加载数据 */
@@ -50,6 +90,7 @@ async function loadMachine() {
       categories: data.categories,
       is_operational: data.is_operational,
       photo_description: data.photo_description,
+      tag_ids: data.tags ? data.tags.map((t) => t.id) : [],
     })
   } catch {
     message.error('加载失败')
@@ -79,8 +120,9 @@ async function handleSubmit() {
   }
 }
 
-onMounted(() => {
-  loadMachine()
+onMounted(async () => {
+  await loadTags()
+  await loadMachine()
 })
 </script>
 
@@ -89,7 +131,7 @@ onMounted(() => {
     <header class="page-header">
       <div>
         <h1>{{ isEdit ? '编辑售货机' : '新增售货机' }}</h1>
-        <p class="subtitle">填写机型、地点、售卖品类、运作状态与照片描述</p>
+        <p class="subtitle">填写机型、地点、售卖品类、运作状态、照片描述与标签</p>
       </div>
       <NButton quaternary @click="router.push('/')">返回列表</NButton>
     </header>
@@ -130,6 +172,24 @@ onMounted(() => {
               <template #checked>运作中</template>
               <template #unchecked>已停运</template>
             </NSwitch>
+          </NFormItem>
+
+          <NFormItem label="标签" path="tag_ids">
+            <NSelect
+              v-model:value="formModel.tag_ids"
+              :options="tagOptions"
+              :render-label="renderTagLabel"
+              multiple
+              placeholder="选择一个或多个标签"
+              style="width: 100%"
+              clearable
+              :max-tag-count="5"
+            />
+            <div v-if="allTags.length === 0" class="empty-tip">
+              暂无标签，可前往
+              <a @click="router.push('/tags')" class="link">标签管理</a>
+              中新增
+            </div>
           </NFormItem>
 
           <NFormItem label="照片描述" path="photo_description">
@@ -189,5 +249,20 @@ onMounted(() => {
 .form-card {
   background: #fffdf8;
   border: 1px solid #e8dcc8;
+}
+
+.empty-tip {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.link {
+  color: #1e88e5;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
 </style>

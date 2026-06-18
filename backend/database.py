@@ -71,6 +71,27 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                color TEXT NOT NULL DEFAULT '#18a058'
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS machine_tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                machine_id INTEGER NOT NULL,
+                tag_id INTEGER NOT NULL,
+                FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE,
+                FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+                UNIQUE(machine_id, tag_id)
+            )
+            """
+        )
         conn.commit()
     finally:
         conn.close()

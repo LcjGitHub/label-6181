@@ -131,6 +131,33 @@ INSPECTION_SEED_DATA = [
     },
 ]
 
+TAG_SEED_DATA = [
+    {"name": "经典红色", "color": "#e53935"},
+    {"name": "热饮专用", "color": "#fb8c00"},
+    {"name": "日式复古", "color": "#8e24aa"},
+    {"name": "零食型", "color": "#43a047"},
+    {"name": "饮料型", "color": "#1e88e5"},
+    {"name": "需维修", "color": "#d81b60"},
+    {"name": "昭和年代", "color": "#6d4c41"},
+    {"name": "地铁站", "color": "#00897b"},
+]
+
+MACHINE_TAG_SEED_DATA = [
+    {"machine_id": 1, "tag_id": 1},
+    {"machine_id": 1, "tag_id": 3},
+    {"machine_id": 1, "tag_id": 5},
+    {"machine_id": 1, "tag_id": 8},
+    {"machine_id": 2, "tag_id": 2},
+    {"machine_id": 2, "tag_id": 3},
+    {"machine_id": 3, "tag_id": 3},
+    {"machine_id": 3, "tag_id": 5},
+    {"machine_id": 3, "tag_id": 6},
+    {"machine_id": 4, "tag_id": 4},
+    {"machine_id": 4, "tag_id": 7},
+    {"machine_id": 5, "tag_id": 5},
+    {"machine_id": 5, "tag_id": 6},
+]
+
 
 def seed_if_empty() -> None:
     """
@@ -176,6 +203,26 @@ def seed_if_empty() -> None:
                 VALUES (:machine_id, :inspection_time, :result, :remark)
                 """,
                 INSPECTION_SEED_DATA,
+            )
+
+        tag_count = conn.execute("SELECT COUNT(*) FROM tags").fetchone()[0]
+        if tag_count == 0:
+            conn.executemany(
+                """
+                INSERT INTO tags (name, color)
+                VALUES (:name, :color)
+                """,
+                TAG_SEED_DATA,
+            )
+
+        mt_count = conn.execute("SELECT COUNT(*) FROM machine_tags").fetchone()[0]
+        if mt_count == 0:
+            conn.executemany(
+                """
+                INSERT OR IGNORE INTO machine_tags (machine_id, tag_id)
+                VALUES (:machine_id, :tag_id)
+                """,
+                MACHINE_TAG_SEED_DATA,
             )
 
         conn.commit()

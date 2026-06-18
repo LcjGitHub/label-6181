@@ -5,12 +5,16 @@ import { useMessage, NButton, NTag, NSpace, NPopconfirm } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { useAsyncState } from '@vueuse/core'
 import { deleteMachine, fetchMachines } from '@/api/machines'
+import { fetchTags } from '@/api/tags'
 import type { Machine, OperationalFilter } from '@/types/machine'
+import type { Tag } from '@/types/tag'
 
 const router = useRouter()
 const message = useMessage()
 
 const operationalFilter = ref<OperationalFilter>('all')
+const tagFilter = ref<number | null>(null)
+const allTags = ref<Tag[]>([])
 
 const filterOptions = [
   { label: '全部', value: 'all' as const },
@@ -18,19 +22,27 @@ const filterOptions = [
   { label: '已停运', value: 'false' as const },
 ]
 
+const tagFilterOptions = computed(() => [
+  { label: '全部标签', value: null },
+  ...allTags.value.map((t) => ({ label: t.name, value: t.id })),
+])
+
 const {
   state: machines,
   isLoading,
   execute: reload,
 } = useAsyncState(
-  () => fetchMachines(operationalFilter.value),
+  () => fetchMachines(operationalFilter.value, tagFilter.value),
   [],
   { immediate: false, resetOnExecute: false },
 )
 
+async function loadTags() {
+  allTags.value = await fetchTags()
+}
+
 /** 筛选变化时重新加载 */
-function onFilterChange(value: OperationalFilter) {
-  operationalFilter.value = value
+function onFilterChange() {
   reload()
 }
 
@@ -59,6 +71,36 @@ const columns = computed<DataTableColumns<Machine>>(() => [
         NTag,
         { type: row.is_operational ? 'success' : 'default', size: 'small' },
         { default: () => (row.is_operational ? '运作中' : '已停运') },
+      )
+    },
+  },
+  {
+    title: '标签',
+    key: 'tags',
+    width: 220,
+    render(row) {
+      if (!row.tags || row.tags.length === 0) {
+        return h('span', { style: { color: '#999' } }, '无')
+      }
+      return h(
+        NSpace,
+        { size: 4, wrapItem: true, wrap: true },
+        () =>
+          row.tags.map((tag) =>
+            h(
+              NTag,
+              {
+                size: 'small',
+                key: tag.id,
+                style: {
+                  backgroundColor: tag.color,
+                  borderColor: tag.color,
+                  color: '#fff',
+                },
+              },
+              { default: () => tag.name },
+            ),
+          ),
       )
     },
   },
@@ -124,7 +166,8 @@ const columns = computed<DataTableColumns<Machine>>(() => [
   },
 ])
 
-onMounted(() => {
+onMounted(async () => {
+  await loadTags()
   reload()
 })
 </script>
@@ -140,6 +183,7 @@ onMounted(() => {
         <NButton @click="router.push('/maintenances')">维保记录</NButton>
         <NButton @click="router.push('/inspections')">巡检打卡</NButton>
         <NButton @click="router.push('/manufacturers')">厂商品牌</NButton>
+        <NButton @click="router.push('/tags')">标签管理</NButton>
         <NButton type="primary" @click="router.push('/machines/new')">
           新增机型
         </NButton>
@@ -151,7 +195,7 @@ onMounted(() => {
         <span class="toolbar-label">运作状态筛选</span>
         <NRadioGroup
           :value="operationalFilter"
-          @update:value="onFilterChange"
+          @update:value="(v: OperationalFilter) => { operationalFilter = v; onFilterChange() }"
         >
           <NRadioButton
             v-for="opt in filterOptions"
@@ -160,6 +204,15 @@ onMounted(() => {
             :label="opt.label"
           />
         </NRadioGroup>
+        <span class="toolbar-sep" />
+        <span class="toolbar-label">按标签筛选</span>
+        <NSelect
+          :options="tagFilterOptions"
+          :value="tagFilter"
+          @update:value="(v: number | null) => { tagFilter = v; onFilterChange() }"
+          style="width: 180px"
+          placeholder="选择标签"
+        />
       </div>
 
       <NDataTable
@@ -176,7 +229,7 @@ onMounted(() => {
 
 <style scoped>
 .page {
-  max-width: 1100px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: 32px 20px 48px;
 }
@@ -217,5 +270,12 @@ onMounted(() => {
 .toolbar-label {
   font-size: 0.9rem;
   color: #6b5c48;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: #e0d5c2;
+  margin: 0 4px;
 }
 </style>

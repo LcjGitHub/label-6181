@@ -9,13 +9,17 @@ const http = axios.create({
 /**
  * 获取售货机列表
  * @param operational - 运作状态筛选
+ * @param tagId - 标签 ID 筛选，null 表示全部
  */
 export async function fetchMachines(
   operational: OperationalFilter = 'all',
+  tagId: number | null = null,
 ): Promise<Machine[]> {
-  const { data } = await http.get<Machine[]>('/machines', {
-    params: { operational },
-  })
+  const params: Record<string, unknown> = { operational }
+  if (tagId !== null) {
+    params.tag_id = tagId
+  }
+  const { data } = await http.get<Machine[]>('/machines', { params })
   return data
 }
 

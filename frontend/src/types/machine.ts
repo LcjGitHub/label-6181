@@ -1,3 +1,5 @@
+import type { Tag } from '@/types/tag'
+
 /** 运作状态筛选 */
 export type OperationalFilter = 'all' | 'true' | 'false'
 
@@ -9,6 +11,7 @@ export interface Machine {
   categories: string
   is_operational: boolean
   photo_description: string
+  tags: Tag[]
 }
 
 /** 创建/更新表单 */
@@ -18,4 +21,5 @@ export interface MachineForm {
   categories: string
   is_operational: boolean
   photo_description: string
+  tag_ids: number[]
 }

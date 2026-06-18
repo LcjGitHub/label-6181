@@ -63,6 +63,21 @@ const router = createRouter({
       name: 'inspection-new',
       component: () => import('@/views/InspectionFormView.vue'),
     },
+    {
+      path: '/tags',
+      name: 'tag-list',
+      component: () => import('@/views/TagListView.vue'),
+    },
+    {
+      path: '/tags/new',
+      name: 'tag-new',
+      component: () => import('@/views/TagFormView.vue'),
+    },
+    {
+      path: '/tags/:id/edit',
+      name: 'tag-edit',
+      component: () => import('@/views/TagFormView.vue'),
+    },
   ],
 })
 

@@ -9,6 +9,11 @@ const router = createRouter({
       component: () => import('@/views/MachineListView.vue'),
     },
     {
+      path: '/statistics',
+      name: 'statistics',
+      component: () => import('@/views/StatisticsView.vue'),
+    },
+    {
       path: '/machines/:id/edit',
       name: 'machine-edit',
       component: () => import('@/views/MachineFormView.vue'),

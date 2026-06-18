@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Machine, MachineForm, OperationalFilter } from '@/types/machine'
+import type { Machine, MachineForm, OperationalFilter, StatisticsData } from '@/types/machine'
 import type { Tag } from '@/types/tag'
 
 const http = axios.create({
@@ -75,5 +75,13 @@ export async function setMachineTags(
   const { data } = await http.put<Tag[]>(`/machines/${machineId}/tags`, {
     tag_ids: tagIds,
   })
+  return data
+}
+
+/**
+ * 获取统计看板数据
+ */
+export async function fetchStatistics(): Promise<StatisticsData> {
+  const { data } = await http.get<StatisticsData>('/statistics')
   return data
 }

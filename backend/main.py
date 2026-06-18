@@ -12,6 +12,7 @@ from schemas import (
     ManufacturerCreate, ManufacturerOut, ManufacturerUpdate,
     MaintenanceCreate, MaintenanceOut, MaintenanceUpdate,
     InspectionCreate, InspectionOut,
+    StatisticsOut, LocationStats, CategoryStats,
 )
 from seed import seed_if_empty
 
@@ -669,5 +670,67 @@ def create_inspection(payload: InspectionCreate) -> InspectionOut:
         "SELECT * FROM inspections WHERE id = ?", (cursor.lastrowid,)
     ).fetchone()
     return row_to_inspection(row)
+  finally:
+    conn.close()
+
+
+@app.get("/api/statistics", response_model=StatisticsOut)
+def get_statistics() -> StatisticsOut:
+  """获取数据统计看板的聚合数据。"""
+  conn = get_connection()
+  try:
+    total_row = conn.execute(
+        "SELECT COUNT(*) as total FROM machines"
+    ).fetchone()
+    total_machines = total_row["total"] if total_row else 0
+
+    operational_row = conn.execute(
+        "SELECT COUNT(*) as count FROM machines WHERE is_operational = 1"
+    ).fetchone()
+    operational_count = operational_row["count"] if operational_row else 0
+
+    out_of_service_count = total_machines - operational_count
+
+    location_rows = conn.execute(
+        """
+        SELECT location, COUNT(*) as count
+        FROM machines
+        GROUP BY location
+        ORDER BY count DESC, location ASC
+        """
+    ).fetchall()
+    location_distribution = [
+        LocationStats(location=row["location"], count=row["count"])
+        for row in location_rows
+    ]
+
+    category_rows = conn.execute(
+        "SELECT categories FROM machines"
+    ).fetchall()
+    category_counts: dict[str, int] = {}
+    for row in category_rows:
+      categories = row["categories"]
+      if categories:
+        for cat in categories.split(","):
+          cat = cat.strip()
+          if cat:
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+
+    sorted_categories = sorted(
+        category_counts.items(),
+        key=lambda x: (-x[1], x[0])
+    )
+    category_rankings = [
+        CategoryStats(category=cat, count=count)
+        for cat, count in sorted_categories
+    ]
+
+    return StatisticsOut(
+        total_machines=total_machines,
+        operational_count=operational_count,
+        out_of_service_count=out_of_service_count,
+        location_distribution=location_distribution,
+        category_rankings=category_rankings,
+    )
   finally:
     conn.close()

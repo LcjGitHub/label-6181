@@ -190,6 +190,9 @@ onMounted(() => {
         <p class="subtitle">收录经典机型 · 地点 · 售卖品类与运作状态</p>
       </div>
       <NSpace>
+        <NButton type="success" @click="router.push('/statistics')">
+          数据统计
+        </NButton>
         <NButton @click="router.push('/maintenances')">维保记录</NButton>
         <NButton @click="router.push('/inspections')">巡检打卡</NButton>
         <NButton @click="router.push('/manufacturers')">厂商品牌</NButton>

@@ -138,3 +138,27 @@ class InspectionOut(InspectionBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class LocationStats(BaseModel):
+    """地点分布统计。"""
+
+    location: str = Field(..., description="地点名称")
+    count: int = Field(..., description="该地点的售货机数量")
+
+
+class CategoryStats(BaseModel):
+    """售卖品类统计。"""
+
+    category: str = Field(..., description="品类名称")
+    count: int = Field(..., description="出现次数")
+
+
+class StatisticsOut(BaseModel):
+    """统计看板数据响应。"""
+
+    total_machines: int = Field(..., description="售货机总数")
+    operational_count: int = Field(..., description="运作中数量")
+    out_of_service_count: int = Field(..., description="已停运数量")
+    location_distribution: list[LocationStats] = Field(..., description="各地点分布汇总")
+    category_rankings: list[CategoryStats] = Field(..., description="各售卖品类出现次数排行")

@@ -275,7 +275,7 @@ onMounted(() => {
         <span class="toolbar-label">关键词搜索</span>
         <NInput
           v-model:value="searchKeyword"
-          placeholder="机型、地点、品类、描述"
+          placeholder="机型、地点、品类、年份、描述"
           style="width: 220px"
           @keyup.enter="onFilterChange"
         />

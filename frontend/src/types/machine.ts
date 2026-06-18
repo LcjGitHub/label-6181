@@ -22,7 +22,7 @@ export interface MachineForm {
   categories: string
   is_operational: boolean
   photo_description: string
-  manufacturing_year: number | null
+  manufacturing_year: number
   tag_ids: number[]
 }
 

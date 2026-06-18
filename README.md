@@ -46,9 +46,9 @@ cd frontend && npm install && npm run dev
 ### 售货机机型图鉴
 
 - 机器列表，支持按「全部 / 运作中 / 已停运」筛选
-- 机器列表，支持按机型、地点、售卖品类、照片描述的关键词模糊搜索，可与运作状态、标签筛选组合使用
+- 机器列表，支持按机型、地点、售卖品类、制造年份、照片描述的关键词模糊搜索，可与运作状态、标签筛选组合使用
 - 新增、编辑、删除售货机记录
-- 字段：机型、地点、售卖品类、是否运作、照片描述
+- 字段：机型、地点、售卖品类、制造年份、是否运作、照片描述
 
 ### 厂商品牌
 
@@ -119,7 +119,7 @@ cd frontend && npm install && npm run dev
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/machines?operational=all\|true\|false&tag_id=&keyword=` | 列表（运作状态筛选 + 标签筛选 + 关键词模糊搜索，`tag_id` 与 `keyword` 均为可选参数；`keyword` 对机型、地点、售卖品类、照片描述做模糊匹配，可与其他筛选组合） |
+| GET | `/api/machines?operational=all\|true\|false&tag_id=&keyword=` | 列表（运作状态筛选 + 标签筛选 + 关键词模糊搜索，`tag_id` 与 `keyword` 均为可选参数；`keyword` 对机型、地点、售卖品类、制造年份、照片描述做模糊匹配，可与其他筛选组合） |
 | GET | `/api/machines/{id}` | 详情（响应体包含关联的 `tags` 列表） |
 | POST | `/api/machines` | 新增（请求体中 `tag_ids` 可选，省略时不设置标签） |
 | PUT | `/api/machines/{id}` | 更新（请求体中 `tag_ids` 可选，省略时不修改现有标签） |
@@ -133,6 +133,7 @@ cd frontend && npm install && npm run dev
 | `model_type` | string | 是 | 机型 |
 | `location` | string | 是 | 地点 |
 | `categories` | string | 是 | 售卖品类 |
+| `manufacturing_year` | integer | 是 | 制造年份（1950–2100） |
 | `is_operational` | boolean | 否 | 是否运作，默认 `true` |
 | `photo_description` | string | 否 | 照片描述，默认空字符串 |
 | `tag_ids` | number[] \| null | 否 | **仅用于创建/更新请求体**，关联标签 ID 列表；省略（null）时不操作标签 |

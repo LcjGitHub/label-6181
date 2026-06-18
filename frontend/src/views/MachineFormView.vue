@@ -33,7 +33,7 @@ const formModel = reactive<MachineForm>({
   categories: '',
   is_operational: true,
   photo_description: '',
-  manufacturing_year: null,
+  manufacturing_year: 1950,
   tag_ids: [],
 })
 
@@ -51,7 +51,19 @@ const rules: FormRules = {
   categories: [{ required: true, message: '请输入售卖品类', trigger: 'blur' }],
   manufacturing_year: [
     { required: true, type: 'number', message: '请输入制造年份', trigger: ['blur', 'change'] },
-    { type: 'number', validator: (_rule, value) => { if (value !== null && value !== undefined && (value < 1950 || value > 2100)) return new Error('年份范围为 1950~2100'); return true }, trigger: ['blur', 'change'] },
+    {
+      type: 'number',
+      validator: (_rule, value) => {
+        if (value === null || value === undefined || Number.isNaN(value)) {
+          return new Error('请输入制造年份')
+        }
+        if (value < 1950 || value > 2100) {
+          return new Error('年份范围为 1950~2100')
+        }
+        return true
+      },
+      trigger: ['blur', 'change'],
+    },
   ],
 }
 
@@ -140,7 +152,7 @@ onMounted(() => {
     <header class="page-header">
       <div>
         <h1>{{ isEdit ? '编辑售货机' : '新增售货机' }}</h1>
-        <p class="subtitle">填写机型、地点、售卖品类、运作状态、照片描述与标签</p>
+        <p class="subtitle">填写机型、地点、售卖品类、制造年份、运作状态、照片描述与标签</p>
       </div>
       <NButton quaternary @click="router.push('/')">返回列表</NButton>
     </header>
@@ -183,7 +195,6 @@ onMounted(() => {
               :max="2100"
               placeholder="例如 1985"
               style="width: 100%"
-              clearable
             />
           </NFormItem>
 

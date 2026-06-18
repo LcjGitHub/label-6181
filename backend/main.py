@@ -220,8 +220,8 @@ def list_machines(
 
     if keyword.strip():
       kw = f"%{keyword.strip()}%"
-      conditions.append("(m.model_type LIKE ? OR m.location LIKE ? OR m.categories LIKE ? OR m.photo_description LIKE ?)")
-      params.extend([kw, kw, kw, kw])
+      conditions.append("(m.model_type LIKE ? OR m.location LIKE ? OR m.categories LIKE ? OR m.photo_description LIKE ? OR CAST(m.manufacturing_year AS TEXT) LIKE ?)")
+      params.extend([kw, kw, kw, kw, kw])
 
     if operational == "true":
       conditions.append("m.is_operational = 1")

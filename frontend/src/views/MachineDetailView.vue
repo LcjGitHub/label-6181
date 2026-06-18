@@ -59,7 +59,7 @@ onMounted(() => {
     <header class="page-header">
       <div>
         <h1>售货机详情</h1>
-        <p class="subtitle">查看机型、地点、售卖品类、运作状态、照片描述与标签</p>
+        <p class="subtitle">查看机型、地点、售卖品类、制造年份、运作状态、照片描述与标签</p>
       </div>
       <NSpace>
         <NButton quaternary @click="router.push('/')">返回列表</NButton>

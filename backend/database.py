@@ -32,7 +32,7 @@ def init_db() -> None:
                 categories TEXT NOT NULL,
                 is_operational INTEGER NOT NULL DEFAULT 1,
                 photo_description TEXT NOT NULL DEFAULT '',
-                manufacturing_year INTEGER NOT NULL DEFAULT 0
+                manufacturing_year INTEGER NOT NULL DEFAULT 1950
             )
             """
         )
@@ -93,6 +93,20 @@ def init_db() -> None:
             )
             """
         )
+        _migrate_machines_table(conn)
         conn.commit()
     finally:
         conn.close()
+
+
+def _migrate_machines_table(conn: sqlite3.Connection) -> None:
+    """
+     * 为已有 machines 表自动补全缺失的 manufacturing_year 列，
+     * 避免旧部署必须删库重建。
+     * @param {sqlite3.Connection} conn
+    """
+    cols = [row[1] for row in conn.execute("PRAGMA table_info(machines)").fetchall()]
+    if "manufacturing_year" not in cols:
+        conn.execute(
+            "ALTER TABLE machines ADD COLUMN manufacturing_year INTEGER NOT NULL DEFAULT 1950"
+        )
